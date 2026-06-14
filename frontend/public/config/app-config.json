@@ -1,0 +1,62 @@
+{
+  "adminPassword": "change-me",
+  "autoCaptureEnabled": false,
+  "ocrConfidenceThreshold": 0.86,
+  "employees": ["1234", "2345", "3456", "4567"],
+  "allowedCharacters": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+  "frameTypes": [
+    {
+      "id": "standard",
+      "name": "Standard Frame",
+      "serialPattern": "^[A-Z]{3}[0-9]{5}$",
+      "example": "ABC12345"
+    },
+    {
+      "id": "numeric",
+      "name": "Numeric Frame",
+      "serialPattern": "^[0-9]{8}$",
+      "example": "12345678"
+    }
+  ],
+  "operations": [
+    {
+      "id": "mf-stamping",
+      "name": "MF Stamping",
+      "requiredFields": ["batchNumber", "fromSerial", "toSerial", "jigUsed", "notes"]
+    },
+    {
+      "id": "robot-braze",
+      "name": "Robot Braze",
+      "requiredFields": ["batchNumber", "jigUsed", "robotUsed", "notes"]
+    },
+    {
+      "id": "ales",
+      "name": "Ales",
+      "requiredFields": ["batchNumber", "jigUsed", "notes"]
+    },
+    {
+      "id": "paint",
+      "name": "Paint",
+      "requiredFields": ["batchNumber", "paintStatus", "notes"]
+    },
+    {
+      "id": "final-inspection",
+      "name": "Final Inspection",
+      "requiredFields": ["batchNumber", "paintStatus", "notes"]
+    }
+  ],
+  "fields": {
+    "batchNumber": { "label": "Batch number", "type": "text", "required": true },
+    "fromSerial": { "label": "From serial", "type": "text", "required": false },
+    "toSerial": { "label": "To serial", "type": "text", "required": false },
+    "jigUsed": { "label": "Jig used", "type": "text", "required": false },
+    "robotUsed": { "label": "Robot used", "type": "text", "required": false },
+    "paintStatus": {
+      "label": "Paint status",
+      "type": "select",
+      "required": false,
+      "options": ["Pass", "Rework", "Hold"]
+    },
+    "notes": { "label": "Notes", "type": "textarea", "required": false }
+  }
+}

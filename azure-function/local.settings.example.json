@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AZURE_VISION_ENDPOINT": "https://YOUR-RESOURCE.cognitiveservices.azure.com",
+    "AZURE_VISION_KEY": "YOUR_AZURE_VISION_KEY",
+    "OCR_ALLOWED_CHARACTERS": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+    "OCR_SERIAL_PATTERN": "^[A-Z]{3}[0-9]{5}$",
+    "OCR_CONFIDENCE_THRESHOLD": "0.86"
+  }
+}

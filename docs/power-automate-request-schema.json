@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "properties": {
+    "operatorId": { "type": "string" },
+    "operation": { "type": "string" },
+    "serialNumber": { "type": "string" },
+    "batchNumber": { "type": "string" },
+    "jigUsed": { "type": "string" },
+    "robotUsed": { "type": "string" },
+    "paintStatus": { "type": "string" },
+    "dateTime": { "type": "string", "format": "date-time" },
+    "ocrConfidence": { "type": "number" },
+    "manualCorrection": { "type": "boolean" },
+    "notes": { "type": "string" },
+    "imageBase64": { "type": "string" },
+    "fields": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "required": [
+    "operatorId",
+    "operation",
+    "serialNumber",
+    "dateTime",
+    "ocrConfidence",
+    "manualCorrection",
+    "imageBase64"
+  ]
+}
