@@ -8,8 +8,7 @@ export async function loadAppConfig(): Promise<AppConfig> {
     return JSON.parse(saved) as AppConfig;
   }
 
-  const configUrl = `${import.meta.env.BASE_URL}config/app-config.json`;
-  const response = await fetch(configUrl, { cache: "no-store" });
+  const response = await fetch("config/app-config.json", { cache: "no-store" });
   if (!response.ok) {
     throw new Error("Unable to load app configuration.");
   }
