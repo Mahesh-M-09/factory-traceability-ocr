@@ -14,17 +14,18 @@ List name: `Frame Traceability`
 | RobotBrazeDate | Date and time | UTC from app |
 | RobotBrazeOperator | Single line text | 4-digit employee ID |
 | JigUsed | Single line text | Jig identifier |
-| AlesDate | Date and time | UTC from app |
-| AlesOperator | Single line text | 4-digit employee ID |
+| AkeaDate | Date and time | UTC from app |
+| AkeaOperator | Single line text | 4-digit employee ID |
+| AkeaStatus | Choice | OK, Not OK |
+| FinalReworkDate | Date and time | UTC from app |
+| FinalReworkOperator | Single line text | 4-digit employee ID |
+| FinalReworkStatus | Choice | No Rework, Rework Required, Reworked OK, Scrap |
 | PaintDate | Date and time | UTC from app |
 | PaintOperator | Single line text | 4-digit employee ID |
 | PaintStatus | Choice | Pass, Rework, Hold |
 | FinalInspectionDate | Date and time | UTC from app |
 | FinalInspectionOperator | Single line text | 4-digit employee ID |
 | LastUpdated | Date and time | Set every save |
-| OCRConfidence | Number | Store 0-1 or percentage consistently |
-| ManualCorrection | Yes/No | True when operator changed OCR serial |
-| ImageUrl | Hyperlink | Link to document library image |
 | Notes | Multiple lines text | Operator notes |
 
 Document library name: `Frame Serial Images`

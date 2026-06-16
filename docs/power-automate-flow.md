@@ -6,17 +6,13 @@ Create an instant cloud flow with **When an HTTP request is received** and paste
 
 1. Initialize variables for `serialNumber`, `operation`, and an image file name such as:
    `concat(triggerBody()?['serialNumber'], '-', formatDateTime(utcNow(), 'yyyyMMdd-HHmmss'), '.jpg')`
-2. If `imageBase64` is not empty, create file in the SharePoint document library.
-   - File name: generated image file name.
-   - File content: `base64ToBinary(triggerBody()?['imageBase64'])`.
-3. Get files properties or use the created file output to build the image URL. Leave `ImageUrl` empty for no-camera operations such as Stamping.
-4. Get items from the SharePoint list with filter query:
+2. Get items from the SharePoint list with filter query:
    `SerialNumber eq '@{triggerBody()?['serialNumber']}'`
-5. Add a condition: `length(body('Get_items')?['value']) is greater than 0`.
-6. If yes, update the existing item.
-7. If no, create a new item.
-8. Set operation-specific columns based on `operation`.
-9. Respond to the web app with:
+3. Add a condition: `length(body('Get_items')?['value']) is greater than 0`.
+4. If yes, update the existing item.
+5. If no, create a new item.
+6. Set operation-specific columns based on `operation`.
+7. Respond to the web app with:
 
 ```json
 {
@@ -33,5 +29,5 @@ Create an instant cloud flow with **When an HTTP request is received** and paste
 - `Paint` updates `PaintDate`, `PaintOperator`, `PaintStatus`, `CurrentStatus`.
 - `Final Inspection` updates `FinalInspectionDate`, `FinalInspectionOperator`, `CurrentStatus`.
 
-Always update `LastUpdated`, `OCRConfidence`, `ManualCorrection`, `ImageUrl`, and `Notes`.
+Always update `LastUpdated` and `Notes`.
 Also map `material` and `part` into SharePoint columns so each record can be filtered by frame family and part type.

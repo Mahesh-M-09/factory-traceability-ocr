@@ -1,4 +1,5 @@
 import { LogOut, Settings } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 interface HeaderProps {
@@ -7,12 +8,22 @@ interface HeaderProps {
 }
 
 export function Header({ operatorId, onLogout }: HeaderProps) {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
     <header className="app-header">
       <Link className="brand" to={operatorId ? "/materials" : "/"}>
         Traceability OCR
       </Link>
       <nav className="header-actions">
+        <span className="clock-pill">
+          {now.toLocaleDateString()} {now.toLocaleTimeString()}
+        </span>
         {operatorId && <span className="operator-pill">ID {operatorId}</span>}
         <Link className="icon-button" to="/admin" title="Admin configuration" aria-label="Admin configuration">
           <Settings size={22} />

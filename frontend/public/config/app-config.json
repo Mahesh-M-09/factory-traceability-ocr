@@ -44,6 +44,12 @@
               "name": "Akea",
               "captureMode": "ocr",
               "requiredFields": ["partStatus", "notes"]
+            },
+            {
+              "id": "steel-mainframe-final-rework",
+              "name": "Final Rework",
+              "captureMode": "ocr",
+              "requiredFields": ["reworkStatus", "notes"]
             }
           ]
         },
@@ -115,6 +121,12 @@
       "type": "select",
       "required": true,
       "options": ["OK", "Not OK"]
+    },
+    "reworkStatus": {
+      "label": "Final rework",
+      "type": "select",
+      "required": true,
+      "options": ["No Rework", "Rework Required", "Reworked OK", "Scrap"]
     },
     "notes": { "label": "Notes", "type": "textarea", "required": false }
   }

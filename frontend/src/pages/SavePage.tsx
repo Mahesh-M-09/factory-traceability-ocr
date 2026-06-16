@@ -22,7 +22,7 @@ export function SavePage() {
     saveOperation(pendingRecord)
       .then(() => {
         setStatus("success");
-        setMessage(pendingRecord.imageBase64 ? "Record and image saved." : "Record saved.");
+        setMessage("Record saved.");
       })
       .catch((error: Error) => {
         setStatus("error");

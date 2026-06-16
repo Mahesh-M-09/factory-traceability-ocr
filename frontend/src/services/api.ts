@@ -39,10 +39,7 @@ export async function saveOperation(record: OperationRecord) {
     robotUsed: record.formValues.robotUsed ?? "",
     paintStatus: record.formValues.paintStatus ?? "",
     dateTime: record.dateTime,
-    ocrConfidence: record.ocrConfidence,
-    manualCorrection: record.manualCorrection,
     notes: record.formValues.notes ?? "",
-    imageBase64: record.imageBase64,
     fields: record.formValues
   };
 

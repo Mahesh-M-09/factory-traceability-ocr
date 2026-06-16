@@ -144,6 +144,56 @@ export function AdminConfigPage() {
     updateDraft(nextConfig);
   }
 
+  function updateOperationCaptureMode(captureMode: "ocr" | "none") {
+    const nextConfig = {
+      ...draftConfig,
+      materials: draftConfig.materials.map((material) =>
+        material.id !== adminMaterialId
+          ? material
+          : {
+              ...material,
+              parts: material.parts.map((part) =>
+                part.id !== adminPartId
+                  ? part
+                  : {
+                      ...part,
+                      operations: part.operations.map((operation) =>
+                        operation.id !== adminOperationId ? operation : { ...operation, captureMode }
+                      )
+                    }
+              )
+            }
+      )
+    };
+    updateDraft(nextConfig);
+  }
+
+  function addFieldDefinition() {
+    const label = window.prompt("Field label, for example Jig used");
+    if (!label) {
+      return;
+    }
+    const typeAnswer = window.prompt("Field type: text, textarea, or select", "text")?.toLowerCase();
+    const type = typeAnswer === "select" || typeAnswer === "textarea" ? typeAnswer : "text";
+    const required = window.confirm("Should this field be required?");
+    const options =
+      type === "select"
+        ? window
+            .prompt("Dropdown options separated by commas", "Option 1, Option 2")
+            ?.split(",")
+            .map((option) => option.trim())
+            .filter(Boolean)
+        : undefined;
+    const id = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    updateDraft({
+      ...draftConfig,
+      fields: {
+        ...draftConfig.fields,
+        [id]: { label, type, required, options }
+      }
+    });
+  }
+
   if (!unlocked) {
     return (
       <main className="page narrow-page">
@@ -221,6 +271,25 @@ export function AdminConfigPage() {
             Add operation
           </button>
         </div>
+
+        {adminOperation && (
+          <div className="operation-settings">
+            <label className="field">
+              <span>Camera / OCR</span>
+              <select
+                value={adminOperation.captureMode ?? "ocr"}
+                onChange={(event) => updateOperationCaptureMode(event.target.value === "none" ? "none" : "ocr")}
+              >
+                <option value="ocr">Required</option>
+                <option value="none">Not required</option>
+              </select>
+            </label>
+            <button className="secondary-button" onClick={addFieldDefinition}>
+              <Plus size={22} />
+              Create field
+            </button>
+          </div>
+        )}
 
         <div className="field-builder">
           <div className="field-library">

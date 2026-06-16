@@ -491,6 +491,15 @@ dd {
   grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
 }
 
+.operation-settings {
+  align-items: end;
+  border-top: 1px solid #d8d2ca;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(220px, 0.4fr) auto;
+  padding-top: 18px;
+}
+
 .field-builder {
   display: grid;
   gap: 18px;
@@ -595,6 +604,7 @@ dd {
 
   .material-grid,
   .admin-controls,
+  .operation-settings,
   .field-builder {
     grid-template-columns: 1fr;
   }

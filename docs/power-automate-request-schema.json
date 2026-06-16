@@ -11,10 +11,7 @@
     "robotUsed": { "type": "string" },
     "paintStatus": { "type": "string" },
     "dateTime": { "type": "string", "format": "date-time" },
-    "ocrConfidence": { "type": "number" },
-    "manualCorrection": { "type": "boolean" },
     "notes": { "type": "string" },
-    "imageBase64": { "type": "string" },
     "fields": {
       "type": "object",
       "additionalProperties": { "type": "string" }
@@ -26,8 +23,6 @@
     "part",
     "operation",
     "serialNumber",
-    "dateTime",
-    "ocrConfidence",
-    "manualCorrection"
+    "dateTime"
   ]
 }
