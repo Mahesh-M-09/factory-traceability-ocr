@@ -1,7 +1,8 @@
 import type { OcrResult, OperationRecord } from "../types/config";
+import { getOcrApiUrl, getSaveApiUrl } from "./connectionService";
 
 export async function requestOcr(imageBlob: Blob): Promise<OcrResult> {
-  const apiUrl = import.meta.env.VITE_OCR_API_URL as string | undefined;
+  const apiUrl = getOcrApiUrl();
   if (!apiUrl) {
     throw new Error("OCR API URL is not configured.");
   }
@@ -23,7 +24,7 @@ export async function requestOcr(imageBlob: Blob): Promise<OcrResult> {
 }
 
 export async function saveOperation(record: OperationRecord) {
-  const flowUrl = import.meta.env.VITE_POWER_AUTOMATE_URL as string | undefined;
+  const flowUrl = getSaveApiUrl();
   if (!flowUrl) {
     throw new Error("Power Automate URL is not configured.");
   }

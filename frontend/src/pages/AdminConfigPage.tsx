@@ -1,4 +1,4 @@
-import { ChevronLeft, Download, Pencil, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
+import { ChevronLeft, Download, Link, Pencil, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
@@ -375,6 +375,10 @@ export function AdminConfigPage() {
           <button className="secondary-button" onClick={downloadConfig}>
             <Download size={22} />
             Export JSON
+          </button>
+          <button className="secondary-button" onClick={() => navigate("/admin/connections")}>
+            <Link size={22} />
+            Connections
           </button>
         </div>
       </div>

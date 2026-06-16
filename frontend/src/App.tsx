@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { Header } from "./components/Header";
 import { AdminConfigPage } from "./pages/AdminConfigPage";
+import { AdminConnectionsPage } from "./pages/AdminConnectionsPage";
 import { CapturePage } from "./pages/CapturePage";
 import { LoginPage } from "./pages/LoginPage";
 import { MaterialSelectionPage } from "./pages/MaterialSelectionPage";
@@ -120,6 +121,7 @@ function App() {
         <Route path="/save" element={operatorId && pendingRecord ? <SavePage /> : <Navigate to="/form" />} />
         <Route path="/search" element={operatorId ? <SearchPage /> : <Navigate to="/" />} />
         <Route path="/admin" element={<AdminConfigPage />} />
+        <Route path="/admin/connections" element={<AdminConnectionsPage />} />
       </Routes>
     </AppContext.Provider>
   );

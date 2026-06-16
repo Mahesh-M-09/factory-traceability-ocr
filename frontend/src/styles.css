@@ -507,6 +507,28 @@ dd {
   padding: 24px;
 }
 
+.connections-grid {
+  grid-template-columns: 1fr;
+}
+
+.connection-note {
+  background: #f4f2ef;
+  border-left: 8px solid #e8382f;
+  color: #151515;
+  padding: 16px;
+}
+
+.connection-note h2 {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.connection-note p {
+  color: #3f4652;
+  font-weight: 750;
+  margin: 6px 0;
+}
+
 .admin-save-bar {
   align-items: center;
   background: rgba(15, 23, 42, 0.96);
