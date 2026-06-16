@@ -108,7 +108,8 @@ function App() {
           element={
             operatorId &&
             selectedOperationId &&
-            (capture || findOperation(config, selectedMaterialId, selectedPartId, selectedOperationId)?.captureMode === "none") ? (
+            (capture ||
+              findOperation(contextValue.config, selectedMaterialId, selectedPartId, selectedOperationId)?.captureMode === "none") ? (
               <OperationFormPage />
             ) : (
               <Navigate to="/operations" />
