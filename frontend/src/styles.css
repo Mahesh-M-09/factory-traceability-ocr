@@ -1,6 +1,6 @@
 :root {
-  color: #151515;
-  background: #f4f2ef;
+  color: #edf2f7;
+  background: #080b10;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 16px;
 }
@@ -10,6 +10,9 @@
 }
 
 body {
+  background:
+    radial-gradient(circle at top left, rgba(232, 56, 47, 0.18), transparent 34rem),
+    linear-gradient(135deg, #080b10 0%, #111827 48%, #0b0f17 100%);
   margin: 0;
   min-height: 100vh;
 }
@@ -31,9 +34,10 @@ textarea {
 
 .app-header {
   align-items: center;
-  background: #ffffff;
-  border-bottom: 1px solid #d8d2ca;
-  color: #151515;
+  backdrop-filter: blur(18px);
+  background: rgba(8, 11, 16, 0.82);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  color: #edf2f7;
   display: flex;
   justify-content: space-between;
   min-height: 78px;
@@ -42,7 +46,7 @@ textarea {
 
 .brand {
   align-items: center;
-  color: #151515;
+  color: #ffffff;
   display: inline-flex;
   font-size: 1.05rem;
   font-weight: 950;
@@ -70,7 +74,7 @@ textarea {
 }
 
 .operator-pill {
-  background: #151515;
+  background: #e8382f;
   border-radius: 0;
   color: #ffffff;
   font-weight: 900;
@@ -79,10 +83,10 @@ textarea {
 
 .icon-button {
   align-items: center;
-  background: #ffffff;
-  border: 1px solid #151515;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 0;
-  color: #151515;
+  color: #edf2f7;
   display: inline-flex;
   height: 50px;
   justify-content: center;
@@ -91,8 +95,17 @@ textarea {
 }
 
 .icon-button:hover {
-  background: #151515;
+  background: #e8382f;
   color: #ffffff;
+}
+
+.clock-pill {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #dbe4ee;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  padding: 12px 16px;
 }
 
 .page {
@@ -136,7 +149,7 @@ textarea {
 
 .page-heading p,
 .save-panel p {
-  color: #5f5b55;
+  color: #a8b3c2;
   font-size: 1.05rem;
   font-weight: 650;
   margin: 0 0 22px;
@@ -147,10 +160,11 @@ textarea {
 .summary-panel,
 .form-panel,
 .save-panel {
-  background: #ffffff;
-  border: 1px solid #d8d2ca;
-  border-radius: 0;
-  box-shadow: 0 12px 28px rgba(21, 21, 21, 0.07);
+  backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
   padding: 28px;
 }
 
@@ -265,9 +279,9 @@ textarea:focus {
 
 .choice-button {
   align-items: center;
-  background: #ffffff;
-  border: 2px solid #151515;
-  border-radius: 0;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 14px;
   color: #151515;
   cursor: pointer;
   display: inline-flex;
@@ -286,8 +300,8 @@ textarea:focus {
 }
 
 .operation-button {
-  background: #ffffff;
-  border: 2px solid #151515;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   color: #151515;
   font-size: 1.3rem;
   justify-content: space-between;
@@ -310,7 +324,7 @@ textarea:focus {
   align-items: center;
   background: transparent;
   border: 0;
-  color: #151515;
+  color: #edf2f7;
   cursor: pointer;
   display: inline-flex;
   font-weight: 950;
@@ -318,6 +332,14 @@ textarea:focus {
   margin-bottom: 18px;
   padding: 0;
   text-transform: uppercase;
+}
+
+.summary-panel .back-button,
+.form-panel .back-button,
+.review-panel .back-button,
+.save-panel .back-button,
+.login-panel .back-button {
+  color: #151515;
 }
 
 .empty-state {
@@ -471,13 +493,14 @@ dd {
 }
 
 .admin-page {
-  max-width: 980px;
+  max-width: 1120px;
 }
 
 .admin-builder {
-  background: #ffffff;
-  border: 1px solid #d8d2ca;
-  box-shadow: 0 12px 28px rgba(21, 21, 21, 0.07);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
   display: grid;
   gap: 22px;
   margin-bottom: 22px;
@@ -491,12 +514,18 @@ dd {
   grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
 }
 
+.page-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .operation-settings {
   align-items: end;
   border-top: 1px solid #d8d2ca;
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(220px, 0.4fr) auto;
+  grid-template-columns: minmax(220px, 0.4fr) repeat(3, auto);
   padding-top: 18px;
 }
 
@@ -536,7 +565,8 @@ dd {
 .assigned-field {
   align-items: center;
   background: #ffffff;
-  border: 2px solid #151515;
+  border: 1px solid #151515;
+  border-radius: 999px;
   display: inline-flex;
   font-weight: 900;
   gap: 8px;
@@ -546,6 +576,29 @@ dd {
 
 .field-chip {
   cursor: grab;
+  padding: 5px;
+}
+
+.field-chip button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #151515;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 900;
+  min-height: 34px;
+  padding: 5px 8px;
+}
+
+.danger-button {
+  border-color: #e8382f;
+  color: #e8382f;
+}
+
+.danger-button:hover {
+  background: #e8382f;
+  color: #ffffff;
 }
 
 .assigned-fields {
@@ -604,6 +657,7 @@ dd {
 
   .material-grid,
   .admin-controls,
+  .page-edit-actions,
   .operation-settings,
   .field-builder {
     grid-template-columns: 1fr;

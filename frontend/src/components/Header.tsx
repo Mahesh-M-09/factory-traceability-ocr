@@ -1,4 +1,4 @@
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Search, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -25,6 +25,11 @@ export function Header({ operatorId, onLogout }: HeaderProps) {
           {now.toLocaleDateString()} {now.toLocaleTimeString()}
         </span>
         {operatorId && <span className="operator-pill">ID {operatorId}</span>}
+        {operatorId && (
+          <Link className="icon-button" to="/search" title="Search serial" aria-label="Search serial">
+            <Search size={22} />
+          </Link>
+        )}
         <Link className="icon-button" to="/admin" title="Admin configuration" aria-label="Admin configuration">
           <Settings size={22} />
         </Link>

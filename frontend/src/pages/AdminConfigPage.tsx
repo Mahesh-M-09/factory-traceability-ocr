@@ -1,8 +1,9 @@
-import { Download, Plus, RotateCcw, Save, X } from "lucide-react";
+import { ChevronLeft, Download, Pencil, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
 import { resetAppConfig, saveAppConfig } from "../services/configService";
-import type { AppConfig } from "../types/config";
+import type { AppConfig, FieldType } from "../types/config";
 
 export function AdminConfigPage() {
   const { config, setConfig } = useAppContext();
@@ -15,6 +16,7 @@ export function AdminConfigPage() {
   const [adminOperationId, setAdminOperationId] = useState(config.materials[0]?.parts[0]?.operations[0]?.id ?? "");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const adminMaterial = draftConfig.materials.find((material) => material.id === adminMaterialId);
   const adminPart = adminMaterial?.parts.find((part) => part.id === adminPartId);
@@ -144,6 +146,95 @@ export function AdminConfigPage() {
     updateDraft(nextConfig);
   }
 
+  function editSelectedMaterial() {
+    if (!adminMaterial) {
+      return;
+    }
+    const name = window.prompt("Material name", adminMaterial.name);
+    if (!name) {
+      return;
+    }
+    updateDraft({
+      ...draftConfig,
+      materials: draftConfig.materials.map((material) => (material.id === adminMaterialId ? { ...material, name } : material))
+    });
+  }
+
+  function editSelectedPart() {
+    if (!adminPart) {
+      return;
+    }
+    const name = window.prompt("Part page name", adminPart.name);
+    if (!name) {
+      return;
+    }
+    updateDraft({
+      ...draftConfig,
+      materials: draftConfig.materials.map((material) =>
+        material.id !== adminMaterialId
+          ? material
+          : {
+              ...material,
+              parts: material.parts.map((part) => (part.id === adminPartId ? { ...part, name } : part))
+            }
+      )
+    });
+  }
+
+  function updateSelectedOperation(updater: (name: string) => string | null) {
+    if (!adminOperation) {
+      return;
+    }
+    const nextName = updater(adminOperation.name);
+    if (!nextName) {
+      return;
+    }
+    updateDraft({
+      ...draftConfig,
+      materials: draftConfig.materials.map((material) =>
+        material.id !== adminMaterialId
+          ? material
+          : {
+              ...material,
+              parts: material.parts.map((part) =>
+                part.id !== adminPartId
+                  ? part
+                  : {
+                      ...part,
+                      operations: part.operations.map((operation) =>
+                        operation.id === adminOperationId ? { ...operation, name: nextName } : operation
+                      )
+                    }
+              )
+            }
+      )
+    });
+  }
+
+  function deleteSelectedOperation() {
+    if (!adminOperation || !window.confirm(`Remove ${adminOperation.name}?`)) {
+      return;
+    }
+    const nextConfig = {
+      ...draftConfig,
+      materials: draftConfig.materials.map((material) =>
+        material.id !== adminMaterialId
+          ? material
+          : {
+              ...material,
+              parts: material.parts.map((part) =>
+                part.id !== adminPartId
+                  ? part
+                  : { ...part, operations: part.operations.filter((operation) => operation.id !== adminOperationId) }
+              )
+            }
+      )
+    };
+    const nextPart = nextConfig.materials.find((material) => material.id === adminMaterialId)?.parts.find((part) => part.id === adminPartId);
+    setAdminOperationId(nextPart?.operations[0]?.id ?? "");
+    updateDraft(nextConfig);
+  }
+
   function updateOperationCaptureMode(captureMode: "ocr" | "none") {
     const nextConfig = {
       ...draftConfig,
@@ -174,7 +265,7 @@ export function AdminConfigPage() {
       return;
     }
     const typeAnswer = window.prompt("Field type: text, textarea, or select", "text")?.toLowerCase();
-    const type = typeAnswer === "select" || typeAnswer === "textarea" ? typeAnswer : "text";
+    const type: FieldType = typeAnswer === "select" || typeAnswer === "textarea" ? typeAnswer : "text";
     const required = window.confirm("Should this field be required?");
     const options =
       type === "select"
@@ -191,6 +282,57 @@ export function AdminConfigPage() {
         ...draftConfig.fields,
         [id]: { label, type, required, options }
       }
+    });
+  }
+
+  function editFieldDefinition(fieldId: string) {
+    const field = draftConfig.fields[fieldId];
+    if (!field) {
+      return;
+    }
+    const label = window.prompt("Field label", field.label);
+    if (!label) {
+      return;
+    }
+    const typeAnswer = window.prompt("Field type: text, textarea, or select", field.type)?.toLowerCase();
+    const type: FieldType = typeAnswer === "select" || typeAnswer === "textarea" ? typeAnswer : "text";
+    const required = window.confirm("Should this field be required?");
+    const options =
+      type === "select"
+        ? window
+            .prompt("Dropdown options separated by commas", field.options?.join(", ") ?? "")
+            ?.split(",")
+            .map((option) => option.trim())
+            .filter(Boolean)
+        : undefined;
+    updateDraft({
+      ...draftConfig,
+      fields: {
+        ...draftConfig.fields,
+        [fieldId]: { label, type, required, options }
+      }
+    });
+  }
+
+  function deleteFieldDefinition(fieldId: string) {
+    if (!window.confirm(`Delete field ${draftConfig.fields[fieldId]?.label ?? fieldId}?`)) {
+      return;
+    }
+    const nextFields = { ...draftConfig.fields };
+    delete nextFields[fieldId];
+    updateDraft({
+      ...draftConfig,
+      fields: nextFields,
+      materials: draftConfig.materials.map((material) => ({
+        ...material,
+        parts: material.parts.map((part) => ({
+          ...part,
+          operations: part.operations.map((operation) => ({
+            ...operation,
+            requiredFields: operation.requiredFields.filter((item) => item !== fieldId)
+          }))
+        }))
+      }))
     });
   }
 
@@ -214,6 +356,10 @@ export function AdminConfigPage() {
 
   return (
     <main className="page admin-page">
+      <button className="back-button" onClick={() => navigate(-1)}>
+        <ChevronLeft size={22} />
+        Back
+      </button>
       <div className="page-heading">
         <h1>Admin Config</h1>
         <p>Build routes and operation fields, then export the config for the deployed app.</p>
@@ -272,6 +418,17 @@ export function AdminConfigPage() {
           </button>
         </div>
 
+        <div className="page-edit-actions">
+          <button className="secondary-button" onClick={editSelectedMaterial}>
+            <Pencil size={22} />
+            Edit material page
+          </button>
+          <button className="secondary-button" onClick={editSelectedPart}>
+            <Pencil size={22} />
+            Edit part page
+          </button>
+        </div>
+
         {adminOperation && (
           <div className="operation-settings">
             <label className="field">
@@ -288,6 +445,14 @@ export function AdminConfigPage() {
               <Plus size={22} />
               Create field
             </button>
+            <button className="secondary-button" onClick={() => updateSelectedOperation((name) => window.prompt("Operation name", name))}>
+              <Pencil size={22} />
+              Edit operation
+            </button>
+            <button className="secondary-button danger-button" onClick={deleteSelectedOperation}>
+              <Trash2 size={22} />
+              Delete operation
+            </button>
           </div>
         )}
 
@@ -295,15 +460,15 @@ export function AdminConfigPage() {
           <div className="field-library">
             <h2>Field Library</h2>
             {Object.entries(draftConfig.fields).map(([fieldId, field]) => (
-              <button
-                className="field-chip"
-                draggable
-                key={fieldId}
-                onClick={() => addFieldToOperation(fieldId)}
-                onDragStart={(event) => event.dataTransfer.setData("text/plain", fieldId)}
-              >
-                {field.label}
-              </button>
+              <span className="field-chip" draggable key={fieldId} onDragStart={(event) => event.dataTransfer.setData("text/plain", fieldId)}>
+                <button onClick={() => addFieldToOperation(fieldId)}>{field.label}</button>
+                <button onClick={() => editFieldDefinition(fieldId)} aria-label={`Edit ${field.label}`}>
+                  <Pencil size={15} />
+                </button>
+                <button onClick={() => deleteFieldDefinition(fieldId)} aria-label={`Delete ${field.label}`}>
+                  <Trash2 size={15} />
+                </button>
+              </span>
             ))}
           </div>
           <div

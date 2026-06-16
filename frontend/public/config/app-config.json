@@ -53,20 +53,108 @@
             }
           ]
         },
-        { "id": "steel-front-frame", "name": "Front Frame", "operations": [] },
-        { "id": "steel-rear-frame", "name": "Rear Frame", "operations": [] },
-        { "id": "steel-hbs", "name": "HBS", "operations": [] },
-        { "id": "steel-hbp", "name": "HBP", "operations": [] }
+        {
+          "id": "steel-front-frame",
+          "name": "Front Frame",
+          "operations": [
+            {
+              "id": "steel-front-frame-final-rework",
+              "name": "Final Rework",
+              "captureMode": "ocr",
+              "requiredFields": ["reworkStatus", "notes"]
+            }
+          ]
+        },
+        {
+          "id": "steel-rear-frame",
+          "name": "Rear Frame",
+          "operations": [
+            {
+              "id": "steel-rear-frame-final-rework",
+              "name": "Final Rework",
+              "captureMode": "ocr",
+              "requiredFields": ["reworkStatus", "notes"]
+            }
+          ]
+        },
+        {
+          "id": "steel-hbs",
+          "name": "HBS",
+          "operations": [
+            {
+              "id": "steel-hbs-final-rework",
+              "name": "Final Rework",
+              "captureMode": "ocr",
+              "requiredFields": ["reworkStatus", "notes"]
+            }
+          ]
+        },
+        {
+          "id": "steel-hbp",
+          "name": "HBP",
+          "operations": [
+            {
+              "id": "steel-hbp-final-rework",
+              "name": "Final Rework",
+              "captureMode": "ocr",
+              "requiredFields": ["reworkStatus", "notes"]
+            }
+          ]
+        }
       ]
     },
     {
       "id": "titanium",
       "name": "Titanium",
       "parts": [
-        { "id": "titanium-mainframe", "name": "Mainframe", "operations": [] },
-        { "id": "titanium-front-frame", "name": "Front Frame", "operations": [] },
-        { "id": "titanium-rear-frame", "name": "Rear Frame", "operations": [] },
-        { "id": "titanium-hbs", "name": "HBS", "operations": [] }
+        {
+          "id": "titanium-mainframe",
+          "name": "Mainframe",
+          "operations": [
+            {
+              "id": "titanium-mainframe-final-rework",
+              "name": "Final Rework",
+              "captureMode": "ocr",
+              "requiredFields": ["reworkStatus", "notes"]
+            }
+          ]
+        },
+        {
+          "id": "titanium-front-frame",
+          "name": "Front Frame",
+          "operations": [
+            {
+              "id": "titanium-front-frame-final-rework",
+              "name": "Final Rework",
+              "captureMode": "ocr",
+              "requiredFields": ["reworkStatus", "notes"]
+            }
+          ]
+        },
+        {
+          "id": "titanium-rear-frame",
+          "name": "Rear Frame",
+          "operations": [
+            {
+              "id": "titanium-rear-frame-final-rework",
+              "name": "Final Rework",
+              "captureMode": "ocr",
+              "requiredFields": ["reworkStatus", "notes"]
+            }
+          ]
+        },
+        {
+          "id": "titanium-hbs",
+          "name": "HBS",
+          "operations": [
+            {
+              "id": "titanium-hbs-final-rework",
+              "name": "Final Rework",
+              "captureMode": "ocr",
+              "requiredFields": ["reworkStatus", "notes"]
+            }
+          ]
+        }
       ]
     }
   ],

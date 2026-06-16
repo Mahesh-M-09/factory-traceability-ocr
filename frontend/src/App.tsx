@@ -9,6 +9,7 @@ import { OperationFormPage } from "./pages/OperationFormPage";
 import { OperationSelectionPage } from "./pages/OperationSelectionPage";
 import { PartSelectionPage } from "./pages/PartSelectionPage";
 import { SavePage } from "./pages/SavePage";
+import { SearchPage } from "./pages/SearchPage";
 import { loadAppConfig } from "./services/configService";
 import { getStoredOperatorId } from "./services/operatorService";
 import { findOperation } from "./services/selection";
@@ -117,6 +118,7 @@ function App() {
           }
         />
         <Route path="/save" element={operatorId && pendingRecord ? <SavePage /> : <Navigate to="/form" />} />
+        <Route path="/search" element={operatorId ? <SearchPage /> : <Navigate to="/" />} />
         <Route path="/admin" element={<AdminConfigPage />} />
       </Routes>
     </AppContext.Provider>

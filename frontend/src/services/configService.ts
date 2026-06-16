@@ -7,7 +7,7 @@ export async function loadAppConfig(): Promise<AppConfig> {
   if (saved) {
     const savedConfig = JSON.parse(saved) as AppConfig;
     if (Array.isArray(savedConfig.materials)) {
-      return savedConfig;
+      return ensureDefaultReworkOperations(savedConfig);
     }
     window.localStorage.removeItem(CONFIG_STORAGE_KEY);
   }
@@ -17,7 +17,7 @@ export async function loadAppConfig(): Promise<AppConfig> {
     throw new Error("Unable to load app configuration.");
   }
 
-  return (await response.json()) as AppConfig;
+  return ensureDefaultReworkOperations((await response.json()) as AppConfig);
 }
 
 export function saveAppConfig(config: AppConfig) {
@@ -26,4 +26,42 @@ export function saveAppConfig(config: AppConfig) {
 
 export function resetAppConfig() {
   window.localStorage.removeItem(CONFIG_STORAGE_KEY);
+}
+
+function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
+  const fields = {
+    ...config.fields,
+    reworkStatus: config.fields.reworkStatus ?? {
+      label: "Final rework",
+      type: "select" as const,
+      required: true,
+      options: ["No Rework", "Rework Required", "Reworked OK", "Scrap"]
+    }
+  };
+
+  return {
+    ...config,
+    fields,
+    materials: config.materials.map((material) => ({
+      ...material,
+      parts: material.parts.map((part) => {
+        const hasRework = part.operations.some((operation) => operation.name.toLowerCase().includes("rework"));
+        if (hasRework) {
+          return part;
+        }
+        return {
+          ...part,
+          operations: [
+            ...part.operations,
+            {
+              id: `${part.id}-final-rework`,
+              name: "Final Rework",
+              captureMode: "ocr" as const,
+              requiredFields: ["reworkStatus", "notes"]
+            }
+          ]
+        };
+      })
+    }))
+  };
 }
