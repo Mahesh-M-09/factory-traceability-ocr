@@ -60,6 +60,7 @@ export function AdminConfigPage() {
   function updateDraft(nextConfig: AppConfig) {
     setDraftConfig(nextConfig);
     setJsonText(JSON.stringify(nextConfig, null, 2));
+    setMessage("Unsaved admin changes. Press Save to keep them on this iPad.");
   }
 
   function addFieldToOperation(fieldId: string) {
@@ -363,6 +364,19 @@ export function AdminConfigPage() {
       <div className="page-heading">
         <h1>Admin Config</h1>
         <p>Build routes and operation fields, then export the config for the deployed app.</p>
+      </div>
+      <div className="admin-save-bar">
+        <strong>Admin changes are local until saved.</strong>
+        <div className="button-row">
+          <button className="primary-button" onClick={saveConfig}>
+            <Save size={22} />
+            Save changes
+          </button>
+          <button className="secondary-button" onClick={downloadConfig}>
+            <Download size={22} />
+            Export JSON
+          </button>
+        </div>
       </div>
       <section className="admin-builder">
         <div className="admin-controls">
