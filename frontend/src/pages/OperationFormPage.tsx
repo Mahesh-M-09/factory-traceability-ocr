@@ -1,11 +1,16 @@
+import { ChevronLeft } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
 import { FieldRenderer } from "../components/FieldRenderer";
+import { findMaterial, findOperation, findPart } from "../services/selection";
 
 export function OperationFormPage() {
-  const { config, operatorId, selectedOperationId, capture, setPendingRecord } = useAppContext();
-  const operation = config.operations.find((item) => item.id === selectedOperationId);
+  const { config, operatorId, selectedMaterialId, selectedPartId, selectedOperationId, capture, setPendingRecord } =
+    useAppContext();
+  const material = findMaterial(config, selectedMaterialId);
+  const part = findPart(config, selectedMaterialId, selectedPartId);
+  const operation = findOperation(config, selectedMaterialId, selectedPartId, selectedOperationId);
   const navigate = useNavigate();
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
@@ -24,19 +29,21 @@ export function OperationFormPage() {
       return;
     }
 
-    if (!capture || !operation) {
-      setError("Capture or operation data is missing.");
+    if (!operation || !material || !part) {
+      setError("Operation data is missing.");
       return;
     }
 
     setPendingRecord({
       operatorId,
+      material: material.name,
+      part: part.name,
       operation: operation.name,
-      serialNumber: capture.serialNumber,
+      serialNumber: capture?.serialNumber ?? formValues.startSerial ?? "",
       dateTime: new Date().toISOString(),
-      ocrConfidence: capture.confidence,
-      manualCorrection: capture.serialNumber !== capture.originalSerialNumber,
-      imageBase64: capture.imageBase64,
+      ocrConfidence: capture?.confidence ?? 0,
+      manualCorrection: capture ? capture.serialNumber !== capture.originalSerialNumber : false,
+      imageBase64: capture?.imageBase64 ?? "",
       formValues
     });
     navigate("/save");
@@ -45,16 +52,30 @@ export function OperationFormPage() {
   return (
     <main className="page split-page">
       <section className="summary-panel">
+        <button className="back-button" onClick={() => navigate(operation?.captureMode === "none" ? "/operations" : "/capture")}>
+          <ChevronLeft size={22} />
+          Back
+        </button>
         <h1>{operation?.name}</h1>
         <dl>
+          <div>
+            <dt>Material</dt>
+            <dd>{material?.name}</dd>
+          </div>
+          <div>
+            <dt>Part</dt>
+            <dd>{part?.name}</dd>
+          </div>
           <div>
             <dt>Operator</dt>
             <dd>{operatorId}</dd>
           </div>
-          <div>
-            <dt>Serial</dt>
-            <dd>{capture?.serialNumber}</dd>
-          </div>
+          {capture?.serialNumber && (
+            <div>
+              <dt>MF Number</dt>
+              <dd>{capture.serialNumber}</dd>
+            </div>
+          )}
           <div>
             <dt>Date/time</dt>
             <dd>{new Date().toLocaleString()}</dd>
@@ -77,7 +98,11 @@ export function OperationFormPage() {
           ))}
           {error && <div className="error-message">{error}</div>}
           <div className="button-row">
-            <button type="button" className="secondary-button" onClick={() => navigate("/capture")}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => navigate(operation?.captureMode === "none" ? "/operations" : "/capture")}
+            >
               Back
             </button>
             <button className="primary-button">Review and save</button>

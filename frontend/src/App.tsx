@@ -4,11 +4,14 @@ import { Header } from "./components/Header";
 import { AdminConfigPage } from "./pages/AdminConfigPage";
 import { CapturePage } from "./pages/CapturePage";
 import { LoginPage } from "./pages/LoginPage";
+import { MaterialSelectionPage } from "./pages/MaterialSelectionPage";
 import { OperationFormPage } from "./pages/OperationFormPage";
 import { OperationSelectionPage } from "./pages/OperationSelectionPage";
+import { PartSelectionPage } from "./pages/PartSelectionPage";
 import { SavePage } from "./pages/SavePage";
 import { loadAppConfig } from "./services/configService";
 import { getStoredOperatorId } from "./services/operatorService";
+import { findOperation } from "./services/selection";
 import type { AppConfig, CaptureState, OperationRecord } from "./types/config";
 
 export interface AppContextValue {
@@ -16,6 +19,10 @@ export interface AppContextValue {
   setConfig: (config: AppConfig) => void;
   operatorId: string;
   setOperatorId: (operatorId: string) => void;
+  selectedMaterialId: string;
+  setSelectedMaterialId: (materialId: string) => void;
+  selectedPartId: string;
+  setSelectedPartId: (partId: string) => void;
   selectedOperationId: string;
   setSelectedOperationId: (operationId: string) => void;
   capture: CaptureState | null;
@@ -30,6 +37,8 @@ function App() {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [loadError, setLoadError] = useState("");
   const [operatorId, setOperatorId] = useState(getStoredOperatorId());
+  const [selectedMaterialId, setSelectedMaterialId] = useState("");
+  const [selectedPartId, setSelectedPartId] = useState("");
   const [selectedOperationId, setSelectedOperationId] = useState("");
   const [capture, setCapture] = useState<CaptureState | null>(null);
   const [pendingRecord, setPendingRecord] = useState<OperationRecord | null>(null);
@@ -49,6 +58,10 @@ function App() {
       setConfig,
       operatorId,
       setOperatorId,
+      selectedMaterialId,
+      setSelectedMaterialId,
+      selectedPartId,
+      setSelectedPartId,
       selectedOperationId,
       setSelectedOperationId,
       capture,
@@ -56,7 +69,7 @@ function App() {
       pendingRecord,
       setPendingRecord
     };
-  }, [capture, config, operatorId, pendingRecord, selectedOperationId]);
+  }, [capture, config, operatorId, pendingRecord, selectedMaterialId, selectedOperationId, selectedPartId]);
 
   if (loadError) {
     return <main className="center-screen error-panel">{loadError}</main>;
@@ -73,6 +86,8 @@ function App() {
         onLogout={() => {
           sessionStorage.clear();
           setOperatorId("");
+          setSelectedMaterialId("");
+          setSelectedPartId("");
           setSelectedOperationId("");
           setCapture(null);
           setPendingRecord(null);
@@ -81,9 +96,25 @@ function App() {
       />
       <Routes>
         <Route path="/" element={<LoginPage />} />
-        <Route path="/operations" element={operatorId ? <OperationSelectionPage /> : <Navigate to="/" />} />
+        <Route path="/materials" element={operatorId ? <MaterialSelectionPage /> : <Navigate to="/" />} />
+        <Route path="/parts" element={operatorId && selectedMaterialId ? <PartSelectionPage /> : <Navigate to="/materials" />} />
+        <Route
+          path="/operations"
+          element={operatorId && selectedMaterialId && selectedPartId ? <OperationSelectionPage /> : <Navigate to="/parts" />}
+        />
         <Route path="/capture" element={operatorId && selectedOperationId ? <CapturePage /> : <Navigate to="/operations" />} />
-        <Route path="/form" element={operatorId && capture ? <OperationFormPage /> : <Navigate to="/capture" />} />
+        <Route
+          path="/form"
+          element={
+            operatorId &&
+            selectedOperationId &&
+            (capture || findOperation(config, selectedMaterialId, selectedPartId, selectedOperationId)?.captureMode === "none") ? (
+              <OperationFormPage />
+            ) : (
+              <Navigate to="/operations" />
+            )
+          }
+        />
         <Route path="/save" element={operatorId && pendingRecord ? <SavePage /> : <Navigate to="/form" />} />
         <Route path="/admin" element={<AdminConfigPage />} />
       </Routes>

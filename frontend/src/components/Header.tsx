@@ -9,7 +9,7 @@ interface HeaderProps {
 export function Header({ operatorId, onLogout }: HeaderProps) {
   return (
     <header className="app-header">
-      <Link className="brand" to={operatorId ? "/operations" : "/"}>
+      <Link className="brand" to={operatorId ? "/materials" : "/"}>
         Traceability OCR
       </Link>
       <nav className="header-actions">

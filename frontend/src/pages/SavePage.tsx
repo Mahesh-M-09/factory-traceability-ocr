@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
 import { saveOperation } from "../services/api";
+import { findOperation } from "../services/selection";
 
 export function SavePage() {
-  const { pendingRecord, setCapture, setPendingRecord } = useAppContext();
+  const { config, selectedMaterialId, selectedPartId, selectedOperationId, pendingRecord, setCapture, setPendingRecord } =
+    useAppContext();
   const [status, setStatus] = useState<"saving" | "success" | "error">("saving");
   const [message, setMessage] = useState("Saving to SharePoint...");
   const hasSaved = useRef(false);
@@ -20,7 +22,7 @@ export function SavePage() {
     saveOperation(pendingRecord)
       .then(() => {
         setStatus("success");
-        setMessage("Record and image saved.");
+        setMessage(pendingRecord.imageBase64 ? "Record and image saved." : "Record saved.");
       })
       .catch((error: Error) => {
         setStatus("error");
@@ -31,7 +33,8 @@ export function SavePage() {
   function nextFrame() {
     setCapture(null);
     setPendingRecord(null);
-    navigate("/capture");
+    const operation = findOperation(config, selectedMaterialId, selectedPartId, selectedOperationId);
+    navigate(operation?.captureMode === "none" ? "/form" : "/capture");
   }
 
   return (
@@ -47,6 +50,12 @@ export function SavePage() {
             <div>
               <dt>Serial</dt>
               <dd>{pendingRecord.serialNumber}</dd>
+            </div>
+            <div>
+              <dt>Material / Part</dt>
+              <dd>
+                {pendingRecord.material} / {pendingRecord.part}
+              </dd>
             </div>
             <div>
               <dt>Operation</dt>

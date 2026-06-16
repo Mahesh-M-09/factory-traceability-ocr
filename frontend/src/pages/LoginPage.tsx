@@ -24,7 +24,7 @@ export function LoginPage() {
 
       storeOperatorId(employeeId);
       setOperatorId(employeeId);
-      navigate("/operations");
+      navigate("/materials");
     } catch {
       setError("Employee validation failed. Please try again.");
     } finally {

@@ -5,6 +5,8 @@ List name: `Frame Traceability`
 | Column | Type | Notes |
 | --- | --- | --- |
 | SerialNumber | Single line text | Indexed, unique if possible |
+| Material | Choice | Steel, Titanium |
+| Part | Choice | Mainframe, Front Frame, Rear Frame, HBS, HBP |
 | BatchNumber | Single line text | From operation form |
 | CurrentStatus | Choice | Latest operation name/status |
 | MFStampingDate | Date and time | UTC from app |

@@ -5,7 +5,11 @@ const CONFIG_STORAGE_KEY = "factoryTraceabilityConfig";
 export async function loadAppConfig(): Promise<AppConfig> {
   const saved = window.localStorage.getItem(CONFIG_STORAGE_KEY);
   if (saved) {
-    return JSON.parse(saved) as AppConfig;
+    const savedConfig = JSON.parse(saved) as AppConfig;
+    if (Array.isArray(savedConfig.materials)) {
+      return savedConfig;
+    }
+    window.localStorage.removeItem(CONFIG_STORAGE_KEY);
   }
 
   const response = await fetch("config/app-config.json", { cache: "no-store" });

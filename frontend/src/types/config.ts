@@ -17,7 +17,20 @@ export interface FrameTypeConfig {
 export interface OperationConfig {
   id: string;
   name: string;
+  captureMode?: "ocr" | "none";
   requiredFields: string[];
+}
+
+export interface PartConfig {
+  id: string;
+  name: string;
+  operations: OperationConfig[];
+}
+
+export interface MaterialConfig {
+  id: string;
+  name: string;
+  parts: PartConfig[];
 }
 
 export interface AppConfig {
@@ -27,6 +40,7 @@ export interface AppConfig {
   employees: string[];
   allowedCharacters: string;
   frameTypes: FrameTypeConfig[];
+  materials: MaterialConfig[];
   operations: OperationConfig[];
   fields: Record<string, FieldConfig>;
 }
@@ -54,6 +68,8 @@ export interface CaptureState {
 
 export interface OperationRecord {
   operatorId: string;
+  material: string;
+  part: string;
   operation: string;
   serialNumber: string;
   dateTime: string;

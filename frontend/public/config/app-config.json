@@ -18,6 +18,52 @@
       "example": "12345678"
     }
   ],
+  "materials": [
+    {
+      "id": "steel",
+      "name": "Steel",
+      "parts": [
+        {
+          "id": "steel-mainframe",
+          "name": "Mainframe",
+          "operations": [
+            {
+              "id": "steel-mainframe-stamping",
+              "name": "Stamping",
+              "captureMode": "none",
+              "requiredFields": ["startSerial", "endSerial", "notes"]
+            },
+            {
+              "id": "steel-mainframe-robot-braze",
+              "name": "Robot Braze",
+              "captureMode": "ocr",
+              "requiredFields": ["jigUsed", "notes"]
+            },
+            {
+              "id": "steel-mainframe-akea",
+              "name": "Akea",
+              "captureMode": "ocr",
+              "requiredFields": ["partStatus", "notes"]
+            }
+          ]
+        },
+        { "id": "steel-front-frame", "name": "Front Frame", "operations": [] },
+        { "id": "steel-rear-frame", "name": "Rear Frame", "operations": [] },
+        { "id": "steel-hbs", "name": "HBS", "operations": [] },
+        { "id": "steel-hbp", "name": "HBP", "operations": [] }
+      ]
+    },
+    {
+      "id": "titanium",
+      "name": "Titanium",
+      "parts": [
+        { "id": "titanium-mainframe", "name": "Mainframe", "operations": [] },
+        { "id": "titanium-front-frame", "name": "Front Frame", "operations": [] },
+        { "id": "titanium-rear-frame", "name": "Rear Frame", "operations": [] },
+        { "id": "titanium-hbs", "name": "HBS", "operations": [] }
+      ]
+    }
+  ],
   "operations": [
     {
       "id": "mf-stamping",
@@ -46,16 +92,29 @@
     }
   ],
   "fields": {
+    "startSerial": { "label": "First stamped serial", "type": "text", "required": true },
+    "endSerial": { "label": "Last stamped serial", "type": "text", "required": true },
     "batchNumber": { "label": "Batch number", "type": "text", "required": true },
     "fromSerial": { "label": "From serial", "type": "text", "required": false },
     "toSerial": { "label": "To serial", "type": "text", "required": false },
-    "jigUsed": { "label": "Jig used", "type": "text", "required": false },
+    "jigUsed": {
+      "label": "Jig used",
+      "type": "select",
+      "required": true,
+      "options": ["JIG 01", "JIG 02"]
+    },
     "robotUsed": { "label": "Robot used", "type": "text", "required": false },
     "paintStatus": {
       "label": "Paint status",
       "type": "select",
       "required": false,
       "options": ["Pass", "Rework", "Hold"]
+    },
+    "partStatus": {
+      "label": "Part status",
+      "type": "select",
+      "required": true,
+      "options": ["OK", "Not OK"]
     },
     "notes": { "label": "Notes", "type": "textarea", "required": false }
   }

@@ -253,6 +253,38 @@ textarea:focus {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
+.choice-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.material-grid {
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+}
+
+.choice-button {
+  align-items: center;
+  background: #ffffff;
+  border: 2px solid #151515;
+  border-radius: 0;
+  color: #151515;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.6rem;
+  font-weight: 950;
+  justify-content: space-between;
+  min-height: 150px;
+  padding: 28px;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.choice-button:hover {
+  background: #151515;
+  color: #ffffff;
+}
+
 .operation-button {
   background: #ffffff;
   border: 2px solid #151515;
@@ -272,6 +304,38 @@ textarea:focus {
 
 .operation-button span {
   max-width: 190px;
+}
+
+.back-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #151515;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 950;
+  gap: 6px;
+  margin-bottom: 18px;
+  padding: 0;
+  text-transform: uppercase;
+}
+
+.empty-state {
+  background: #ffffff;
+  border: 2px dashed #918a81;
+  padding: 32px;
+}
+
+.empty-state h2 {
+  font-size: 1.4rem;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.empty-state p,
+.muted-text {
+  color: #5f5b55;
+  font-weight: 750;
 }
 
 .camera-panel {
@@ -410,6 +474,91 @@ dd {
   max-width: 980px;
 }
 
+.admin-builder {
+  background: #ffffff;
+  border: 1px solid #d8d2ca;
+  box-shadow: 0 12px 28px rgba(21, 21, 21, 0.07);
+  display: grid;
+  gap: 22px;
+  margin-bottom: 22px;
+  padding: 24px;
+}
+
+.admin-controls {
+  align-items: end;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+}
+
+.field-builder {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(320px, 1.2fr);
+}
+
+.field-library,
+.operation-dropzone {
+  background: #f4f2ef;
+  border: 2px solid #151515;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 190px;
+  padding: 18px;
+}
+
+.field-library h2,
+.operation-dropzone h2 {
+  flex-basis: 100%;
+  font-size: 1.1rem;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.operation-dropzone p {
+  color: #5f5b55;
+  flex-basis: 100%;
+  font-weight: 750;
+  margin: 0;
+}
+
+.field-chip,
+.assigned-field {
+  align-items: center;
+  background: #ffffff;
+  border: 2px solid #151515;
+  display: inline-flex;
+  font-weight: 900;
+  gap: 8px;
+  min-height: 44px;
+  padding: 9px 12px;
+}
+
+.field-chip {
+  cursor: grab;
+}
+
+.assigned-fields {
+  align-items: flex-start;
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.assigned-field button {
+  align-items: center;
+  background: #e8382f;
+  border: 0;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
 .json-editor {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   min-height: 58vh;
@@ -441,6 +590,12 @@ dd {
   }
 
   .operation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .material-grid,
+  .admin-controls,
+  .field-builder {
     grid-template-columns: 1fr;
   }
 }

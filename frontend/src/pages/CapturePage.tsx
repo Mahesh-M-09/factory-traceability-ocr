@@ -1,4 +1,4 @@
-import { CheckCircle2, RotateCcw } from "lucide-react";
+import { CheckCircle2, ChevronLeft, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
@@ -6,10 +6,12 @@ import { CameraCapture } from "../components/CameraCapture";
 import { requestOcr } from "../services/api";
 import { blobToBase64 } from "../services/image";
 import { cleanSerialNumber, getDefaultFrameType, isSerialValid } from "../services/serial";
+import { findOperation, findPart } from "../services/selection";
 
 export function CapturePage() {
-  const { config, selectedOperationId, setCapture } = useAppContext();
-  const operation = config.operations.find((item) => item.id === selectedOperationId);
+  const { config, selectedMaterialId, selectedPartId, selectedOperationId, setCapture } = useAppContext();
+  const part = findPart(config, selectedMaterialId, selectedPartId);
+  const operation = findOperation(config, selectedMaterialId, selectedPartId, selectedOperationId);
   const [imagePreview, setImagePreview] = useState("");
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);
   const [imageBase64, setImageBase64] = useState("");
@@ -76,9 +78,13 @@ export function CapturePage() {
   return (
     <main className="page split-page">
       <section>
+        <button className="back-button" onClick={() => navigate("/operations")}>
+          <ChevronLeft size={22} />
+          Back
+        </button>
         <div className="page-heading">
           <h1>{operation?.name ?? "Capture"}</h1>
-          <p>Capture the stamped serial number on the frame.</p>
+          <p>{part?.name}: capture the stamped serial number.</p>
         </div>
         <CameraCapture autoCaptureEnabled={config.autoCaptureEnabled} onCapture={handleCapture} />
       </section>
@@ -122,7 +128,7 @@ export function CapturePage() {
         <div className="button-row">
           <button className="secondary-button" onClick={() => navigate("/operations")}>
             <RotateCcw size={22} />
-            Change operation
+            Operations
           </button>
           <button className="primary-button" onClick={confirmCapture} disabled={!imageBlob || loading}>
             <CheckCircle2 size={24} />

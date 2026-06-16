@@ -2,6 +2,8 @@
   "type": "object",
   "properties": {
     "operatorId": { "type": "string" },
+    "material": { "type": "string" },
+    "part": { "type": "string" },
     "operation": { "type": "string" },
     "serialNumber": { "type": "string" },
     "batchNumber": { "type": "string" },
@@ -20,11 +22,12 @@
   },
   "required": [
     "operatorId",
+    "material",
+    "part",
     "operation",
     "serialNumber",
     "dateTime",
     "ocrConfidence",
-    "manualCorrection",
-    "imageBase64"
+    "manualCorrection"
   ]
 }

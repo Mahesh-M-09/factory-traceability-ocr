@@ -30,6 +30,8 @@ export async function saveOperation(record: OperationRecord) {
 
   const payload = {
     operatorId: record.operatorId,
+    material: record.material,
+    part: record.part,
     operation: record.operation,
     serialNumber: record.serialNumber,
     batchNumber: record.formValues.batchNumber ?? "",
