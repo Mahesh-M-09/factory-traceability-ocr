@@ -37,7 +37,7 @@ interface FunctionRequest {
   rawBody?: unknown;
 }
 
-export default async function ocr(context: FunctionContext, request: FunctionRequest) {
+async function ocr(context: FunctionContext, request: FunctionRequest) {
   try {
     const image = getImageFromRequest(request);
     const visionResult = await callAzureVision(image);
@@ -68,6 +68,8 @@ export default async function ocr(context: FunctionContext, request: FunctionReq
     });
   }
 }
+
+export = ocr;
 
 function getImageFromRequest(request: FunctionRequest): ArrayBuffer {
   const body = request.body ?? request.rawBody;
