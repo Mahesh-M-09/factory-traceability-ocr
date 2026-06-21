@@ -40,6 +40,7 @@ interface FunctionRequest {
 async function ocr(context: FunctionContext, request: FunctionRequest) {
   try {
     const image = getImageFromRequest(request);
+    context.log.info(`OCR image bytes received: ${image.length}`);
     const visionResult = await callAzureVision(image);
     const candidates = extractCandidates(visionResult);
     const selected = selectBestCandidate(candidates);
@@ -72,26 +73,29 @@ async function ocr(context: FunctionContext, request: FunctionRequest) {
 
 export = ocr;
 
-function getImageFromRequest(request: FunctionRequest): ArrayBuffer {
+function getImageFromRequest(request: FunctionRequest): Buffer {
   const body = request.body ?? request.rawBody;
 
-  if (body instanceof ArrayBuffer) {
+  if (Buffer.isBuffer(body)) {
     return body;
   }
 
+  if (body instanceof ArrayBuffer) {
+    return Buffer.from(body);
+  }
+
   if (ArrayBuffer.isView(body)) {
-    return Uint8Array.from(new Uint8Array(body.buffer, body.byteOffset, body.byteLength)).buffer;
+    return Buffer.from(body.buffer, body.byteOffset, body.byteLength);
   }
 
   if (typeof body === "string") {
-    const buffer = Buffer.from(body, "base64");
-    return Uint8Array.from(buffer).buffer;
+    return Buffer.from(body, "binary");
   }
 
   throw new Error("Missing image request body.");
 }
 
-async function callAzureVision(image: ArrayBuffer): Promise<AzureReadResult> {
+async function callAzureVision(image: Buffer): Promise<AzureReadResult> {
   const endpoint = process.env.AZURE_VISION_ENDPOINT;
   const key = process.env.AZURE_VISION_KEY;
 
@@ -112,7 +116,8 @@ async function callAzureVision(image: ArrayBuffer): Promise<AzureReadResult> {
   );
 
   if (!response.ok) {
-    throw new Error(`Azure Vision returned ${response.status}.`);
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Azure Vision returned ${response.status}${detail ? `: ${detail}` : ""}`);
   }
 
   return (await response.json()) as AzureReadResult;
