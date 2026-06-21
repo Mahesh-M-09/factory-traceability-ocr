@@ -36,14 +36,19 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
+          test -f host.json
+          test -f ocr/function.json
+          test -f dist/ocr/index.js
           find . -maxdepth 3 -type f | sort
+          zip -r ../release.zip .
           popd
+          unzip -l release.zip | sed -n '1,80p'
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -57,7 +62,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
-          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -72,4 +76,4 @@ jobs:
         with:
           app-name: 'brompton-trace-ocr-api-09'
           slot-name: 'Production'
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          package: release.zip
