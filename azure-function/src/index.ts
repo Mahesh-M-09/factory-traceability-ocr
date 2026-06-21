@@ -1,1 +1,1 @@
-import "./functions/ocr.js";
+import "./functions/ocr";
