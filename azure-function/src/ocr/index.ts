@@ -23,6 +23,7 @@ interface Candidate {
 
 interface FunctionContext {
   log: {
+    info: (message: string) => void;
     error: (error: unknown) => void;
   };
   res?: {
