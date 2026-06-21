@@ -1,5 +1,3 @@
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-
 interface AzureReadBlock {
   text?: string;
   confidence?: number;
@@ -23,51 +21,71 @@ interface Candidate {
   confidence: number;
 }
 
-app.http("ocr", {
-  methods: ["POST"],
-  authLevel: "function",
-  route: "ocr",
-  handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    try {
-      const image = await getImageFromRequest(request);
-      const visionResult = await callAzureVision(image);
-      const candidates = extractCandidates(visionResult);
-      const selected = selectBestCandidate(candidates);
+interface FunctionContext {
+  log: {
+    error: (error: unknown) => void;
+  };
+  res?: {
+    status: number;
+    body: unknown;
+    headers: Record<string, string>;
+  };
+}
 
-      if (!selected) {
-        return json(422, {
-          success: false,
-          error: "OCR failed. Please retake image or enter serial manually."
-        });
-      }
+interface FunctionRequest {
+  body?: unknown;
+  rawBody?: unknown;
+}
 
-      const threshold = Number(process.env.OCR_CONFIDENCE_THRESHOLD ?? "0.86");
-      return json(200, {
-        success: true,
-        serialNumber: selected.text,
-        confidence: selected.confidence,
-        rawText: candidates.map((candidate) => candidate.text),
-        needsReview: selected.confidence < threshold
-      });
-    } catch (error) {
-      context.error(error);
-      return json(500, {
+export default async function ocr(context: FunctionContext, request: FunctionRequest) {
+  try {
+    const image = getImageFromRequest(request);
+    const visionResult = await callAzureVision(image);
+    const candidates = extractCandidates(visionResult);
+    const selected = selectBestCandidate(candidates);
+
+    if (!selected) {
+      context.res = json(422, {
         success: false,
         error: "OCR failed. Please retake image or enter serial manually."
       });
+      return;
     }
+
+    const threshold = Number(process.env.OCR_CONFIDENCE_THRESHOLD ?? "0.86");
+    context.res = json(200, {
+      success: true,
+      serialNumber: selected.text,
+      confidence: selected.confidence,
+      rawText: candidates.map((candidate) => candidate.text),
+      needsReview: selected.confidence < threshold
+    });
+  } catch (error) {
+    context.log.error(error);
+    context.res = json(500, {
+      success: false,
+      error: "OCR failed. Please retake image or enter serial manually."
+    });
   }
-});
+}
 
-async function getImageFromRequest(request: HttpRequest): Promise<ArrayBuffer> {
-  const formData = await request.formData();
-  const image = formData.get("image");
+function getImageFromRequest(request: FunctionRequest): ArrayBuffer {
+  const body = request.body ?? request.rawBody;
 
-  if (!(image instanceof Blob)) {
-    throw new Error("Missing multipart image field.");
+  if (body instanceof ArrayBuffer) {
+    return body;
   }
 
-  return image.arrayBuffer();
+  if (ArrayBuffer.isView(body)) {
+    return body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength);
+  }
+
+  if (typeof body === "string") {
+    const buffer = Buffer.from(body, "base64");
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+  }
+
+  throw new Error("Missing image request body.");
 }
 
 async function callAzureVision(image: ArrayBuffer): Promise<AzureReadResult> {
@@ -130,10 +148,10 @@ function cleanSerial(value: string) {
     .join("");
 }
 
-function json(status: number, body: unknown): HttpResponseInit {
+function json(status: number, body: unknown) {
   return {
     status,
-    jsonBody: body,
+    body,
     headers: {
       "Content-Type": "application/json"
     }

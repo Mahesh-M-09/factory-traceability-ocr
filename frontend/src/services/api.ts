@@ -7,12 +7,10 @@ export async function requestOcr(imageBlob: Blob): Promise<OcrResult> {
     throw new Error("OCR API URL is not configured.");
   }
 
-  const formData = new FormData();
-  formData.append("image", imageBlob, "frame.jpg");
-
   const response = await fetch(apiUrl, {
     method: "POST",
-    body: formData
+    headers: { "Content-Type": imageBlob.type || "image/jpeg" },
+    body: imageBlob
   });
 
   const result = (await response.json()) as OcrResult;
