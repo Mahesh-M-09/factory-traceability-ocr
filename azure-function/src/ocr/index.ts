@@ -62,9 +62,10 @@ async function ocr(context: FunctionContext, request: FunctionRequest) {
     });
   } catch (error) {
     context.log.error(error);
+    const message = error instanceof Error ? error.message : "Unknown OCR backend error.";
     context.res = json(500, {
       success: false,
-      error: "OCR failed. Please retake image or enter serial manually."
+      error: `OCR failed: ${message}`
     });
   }
 }
