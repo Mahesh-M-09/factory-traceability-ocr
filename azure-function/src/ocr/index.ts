@@ -77,12 +77,12 @@ function getImageFromRequest(request: FunctionRequest): ArrayBuffer {
   }
 
   if (ArrayBuffer.isView(body)) {
-    return body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength);
+    return Uint8Array.from(new Uint8Array(body.buffer, body.byteOffset, body.byteLength)).buffer;
   }
 
   if (typeof body === "string") {
     const buffer = Buffer.from(body, "base64");
-    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+    return Uint8Array.from(buffer).buffer;
   }
 
   throw new Error("Missing image request body.");
