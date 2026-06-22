@@ -19,6 +19,7 @@ interface AzureReadResult {
 interface Candidate {
   text: string;
   confidence: number;
+  source: "line" | "combined";
 }
 
 interface FunctionContext {
@@ -158,17 +159,26 @@ async function callAzureVision(image: Buffer): Promise<AzureReadResult> {
 
 function extractCandidates(result: AzureReadResult): Candidate[] {
   const lines = result.readResult?.blocks?.flatMap((block) => block.lines ?? []) ?? [];
-  return lines
-    .map((line) => {
-      const text = cleanSerial(line.text ?? "");
-      const wordConfidences = line.words?.map((word) => word.confidence ?? 0).filter((confidence) => confidence > 0) ?? [];
-      const confidence =
-        wordConfidences.length > 0
-          ? wordConfidences.reduce((total, current) => total + current, 0) / wordConfidences.length
-          : 0;
-      return { text, confidence };
-    })
-    .filter((candidate) => candidate.text.length > 0);
+  const lineCandidates = lines
+    .map((line) => createCandidate([line], "line"))
+    .filter((candidate): candidate is Candidate => Boolean(candidate));
+
+  const combinedCandidates: Candidate[] = [];
+  for (let index = 0; index < lines.length - 1; index += 1) {
+    const adjacentCandidate = createCandidate([lines[index], lines[index + 1]], "combined");
+    if (adjacentCandidate) {
+      combinedCandidates.push(adjacentCandidate);
+    }
+  }
+
+  if (lines.length > 1) {
+    const allLinesCandidate = createCandidate(lines, "combined");
+    if (allLinesCandidate) {
+      combinedCandidates.push(allLinesCandidate);
+    }
+  }
+
+  return dedupeCandidates([...lineCandidates, ...combinedCandidates]);
 }
 
 function selectBestCandidate(candidates: Candidate[]) {
@@ -176,7 +186,45 @@ function selectBestCandidate(candidates: Candidate[]) {
   const matching = candidates.filter((candidate) => serialPattern.test(candidate.text));
   const pool = matching.length > 0 ? matching : candidates;
 
-  return pool.sort((a, b) => b.confidence - a.confidence || b.text.length - a.text.length)[0];
+  return pool.sort(
+    (a, b) =>
+      b.confidence - a.confidence ||
+      scoreCandidateSource(b) - scoreCandidateSource(a) ||
+      b.text.length - a.text.length
+  )[0];
+}
+
+function createCandidate(lines: AzureReadLine[], source: Candidate["source"]): Candidate | null {
+  const text = cleanSerial(lines.map((line) => line.text ?? "").join(""));
+  const confidence = averageConfidence(
+    lines.flatMap((line) => line.words?.map((word) => word.confidence ?? 0).filter((value) => value > 0) ?? [])
+  );
+
+  return text.length > 0 ? { text, confidence, source } : null;
+}
+
+function averageConfidence(values: number[]) {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  return values.reduce((total, current) => total + current, 0) / values.length;
+}
+
+function dedupeCandidates(candidates: Candidate[]) {
+  const byText = new Map<string, Candidate>();
+  for (const candidate of candidates) {
+    const existing = byText.get(candidate.text);
+    if (!existing || candidate.confidence > existing.confidence) {
+      byText.set(candidate.text, candidate);
+    }
+  }
+
+  return Array.from(byText.values());
+}
+
+function scoreCandidateSource(candidate: Candidate) {
+  return candidate.source === "combined" ? 1 : 0;
 }
 
 function cleanSerial(value: string) {

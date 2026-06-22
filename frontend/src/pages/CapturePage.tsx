@@ -28,6 +28,7 @@ export function CapturePage() {
   const serialIsValid = isSerialValid(serialNumber, frameType);
   const manualCorrection = Boolean(originalSerialNumber && serialNumber !== originalSerialNumber);
   const needsReview = confidence < config.ocrConfidenceThreshold || !serialIsValid || manualCorrection;
+  const confidenceLabel = confidence ? `${Math.round(confidence * 100)}%` : "Not read";
 
   async function handleCapture(blob: Blob) {
     setLoading(true);
@@ -94,6 +95,18 @@ export function CapturePage() {
         {imagePreview && <img className="captured-image" src={imagePreview} alt="Captured frame serial" />}
         {loading && <div className="status-message">Reading serial number...</div>}
         {error && <div className="error-message">{error}</div>}
+        {(serialNumber || rawText.length > 0 || confidence > 0) && (
+          <div className="ocr-result-card">
+            <div>
+              <span>Detected serial</span>
+              <strong>{serialNumber || "No serial selected"}</strong>
+            </div>
+            <div>
+              <span>OCR confidence</span>
+              <strong>{confidenceLabel}</strong>
+            </div>
+          </div>
+        )}
 
         <label className="field">
           <span>Frame type</span>
@@ -116,7 +129,7 @@ export function CapturePage() {
         </label>
 
         <div className="review-meta">
-          <span>Confidence: {confidence ? `${Math.round(confidence * 100)}%` : "Not read"}</span>
+          <span>Confidence: {confidenceLabel}</span>
           <span className={serialIsValid ? "valid-text" : "error-text"}>
             {serialIsValid ? "Format valid" : `Expected ${frameType.example}`}
           </span>

@@ -395,6 +395,36 @@ textarea:focus {
   text-transform: uppercase;
 }
 
+.ocr-result-card {
+  background: #151515;
+  color: #ffffff;
+  display: grid;
+  gap: 1px;
+  grid-template-columns: 1fr 180px;
+}
+
+.ocr-result-card div {
+  background: #22211f;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px 16px;
+}
+
+.ocr-result-card span {
+  color: #d6d2ca;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ocr-result-card strong {
+  font-size: 1.35rem;
+  font-weight: 950;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
 .review-meta {
   background: #f4f2ef;
   border-left: 8px solid #151515;
@@ -682,6 +712,10 @@ dd {
   }
 
   .split-page {
+    grid-template-columns: 1fr;
+  }
+
+  .ocr-result-card {
     grid-template-columns: 1fr;
   }
 
