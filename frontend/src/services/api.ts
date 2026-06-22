@@ -1,5 +1,6 @@
 import type { OcrResult, OperationRecord } from "../types/config";
 import { getOcrApiUrl, getSaveApiUrl } from "./connectionService";
+import { blobToBase64 } from "./image";
 
 export async function requestOcr(imageBlob: Blob): Promise<OcrResult> {
   const apiUrl = getOcrApiUrl();
@@ -7,10 +8,14 @@ export async function requestOcr(imageBlob: Blob): Promise<OcrResult> {
     throw new Error("OCR API URL is not configured.");
   }
 
+  const imageBase64 = await blobToBase64(imageBlob);
   const response = await fetch(apiUrl, {
     method: "POST",
-    headers: { "Content-Type": imageBlob.type || "image/jpeg" },
-    body: imageBlob
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contentType: imageBlob.type || "image/jpeg",
+      imageBase64
+    })
   });
 
   const result = (await response.json()) as OcrResult;

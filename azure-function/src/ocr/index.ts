@@ -38,6 +38,11 @@ interface FunctionRequest {
   rawBody?: unknown;
 }
 
+interface OcrRequestBody {
+  imageBase64?: string;
+  contentType?: string;
+}
+
 async function ocr(context: FunctionContext, request: FunctionRequest) {
   try {
     const image = getImageFromRequest(request);
@@ -77,6 +82,11 @@ export = ocr;
 function getImageFromRequest(request: FunctionRequest): Buffer {
   const body = request.body ?? request.rawBody;
 
+  const parsedBody = parseJsonBody(body);
+  if (parsedBody?.imageBase64) {
+    return Buffer.from(parsedBody.imageBase64.replace(/^data:image\/[a-zA-Z+.-]+;base64,/, ""), "base64");
+  }
+
   if (Buffer.isBuffer(body)) {
     return body;
   }
@@ -90,10 +100,30 @@ function getImageFromRequest(request: FunctionRequest): Buffer {
   }
 
   if (typeof body === "string") {
-    return Buffer.from(body, "binary");
+    return Buffer.from(body, "base64");
   }
 
   throw new Error("Missing image request body.");
+}
+
+function parseJsonBody(body: unknown): OcrRequestBody | null {
+  if (!body) {
+    return null;
+  }
+
+  if (typeof body === "object" && !Buffer.isBuffer(body) && !(body instanceof ArrayBuffer) && !ArrayBuffer.isView(body)) {
+    return body as OcrRequestBody;
+  }
+
+  if (typeof body === "string") {
+    try {
+      return JSON.parse(body) as OcrRequestBody;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
 async function callAzureVision(image: Buffer): Promise<AzureReadResult> {
