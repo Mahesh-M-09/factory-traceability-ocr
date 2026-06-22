@@ -1,4 +1,4 @@
-import { LogOut, Search, Settings } from "lucide-react";
+import { Database, LogOut, Search, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -28,6 +28,11 @@ export function Header({ operatorId, onLogout }: HeaderProps) {
         {operatorId && (
           <Link className="icon-button" to="/search" title="Search serial" aria-label="Search serial">
             <Search size={22} />
+          </Link>
+        )}
+        {operatorId && (
+          <Link className="icon-button" to="/records" title="Demo database" aria-label="Demo database">
+            <Database size={22} />
           </Link>
         )}
         <Link className="icon-button" to="/admin" title="Admin configuration" aria-label="Admin configuration">

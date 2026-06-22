@@ -9,7 +9,7 @@ export function SavePage() {
   const { config, selectedMaterialId, selectedPartId, selectedOperationId, pendingRecord, setCapture, setPendingRecord } =
     useAppContext();
   const [status, setStatus] = useState<"saving" | "success" | "error">("saving");
-  const [message, setMessage] = useState("Saving to SharePoint...");
+  const [message, setMessage] = useState("Saving to demo database...");
   const hasSaved = useRef(false);
   const navigate = useNavigate();
 
@@ -20,9 +20,9 @@ export function SavePage() {
     hasSaved.current = true;
 
     saveOperation(pendingRecord)
-      .then(() => {
+      .then((result) => {
         setStatus("success");
-        setMessage("Record saved.");
+        setMessage(result.message ?? "Record saved.");
       })
       .catch((error: Error) => {
         setStatus("error");

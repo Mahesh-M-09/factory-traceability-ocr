@@ -1,8 +1,9 @@
 import { ChevronLeft } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
 import { FieldRenderer } from "../components/FieldRenderer";
+import { findDemoRecord } from "../services/demoDatabaseService";
 import { findMaterial, findOperation, findPart } from "../services/selection";
 
 export function OperationFormPage() {
@@ -14,6 +15,7 @@ export function OperationFormPage() {
   const navigate = useNavigate();
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
+  const timerStartedAt = useRef(Date.now());
 
   const fields = useMemo(() => {
     return operation?.requiredFields.map((fieldId) => [fieldId, config.fields[fieldId]] as const).filter(([, field]) => field) ?? [];
@@ -34,12 +36,31 @@ export function OperationFormPage() {
       return;
     }
 
+    const isStamping = operation.name.toLowerCase().includes("stamping");
+    const scannedSerial = capture?.serialNumber.trim().toUpperCase() ?? "";
+    if (!isStamping && scannedSerial && !findDemoRecord(scannedSerial)) {
+      setError("Part not recognised. Complete stamping first or upload the serial into the demo database.");
+      return;
+    }
+
+    const hingeSerial = formValues.hingeSerial?.trim().toUpperCase() ?? "";
+    const needsHingeLink = operation.requiredFields.includes("hingeSerial");
+    const hingeRecord = hingeSerial ? findDemoRecord(hingeSerial) : null;
+    if (needsHingeLink && (!hingeRecord || !hingeRecord.part.toLowerCase().includes("hinge"))) {
+      setError("Hinge part not recognised. Scan or enter a hinge serial already saved in the demo database.");
+      return;
+    }
+
+    const cycleTimeSeconds = operation.captureMode === "none" ? 0 : Math.max(1, Math.round((Date.now() - timerStartedAt.current) / 1000));
+
     setPendingRecord({
       operatorId,
       material: material.name,
       part: part.name,
       operation: operation.name,
-      serialNumber: capture?.serialNumber ?? formValues.startSerial ?? "",
+      serialNumber: capture?.serialNumber ?? formValues.startSerial?.trim().toUpperCase() ?? "",
+      linkedHingeSerial: hingeSerial,
+      cycleTimeSeconds,
       dateTime: new Date().toISOString(),
       ocrConfidence: capture?.confidence ?? 0,
       manualCorrection: capture ? capture.serialNumber !== capture.originalSerialNumber : false,

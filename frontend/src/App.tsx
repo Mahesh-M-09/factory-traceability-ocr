@@ -9,6 +9,7 @@ import { MaterialSelectionPage } from "./pages/MaterialSelectionPage";
 import { OperationFormPage } from "./pages/OperationFormPage";
 import { OperationSelectionPage } from "./pages/OperationSelectionPage";
 import { PartSelectionPage } from "./pages/PartSelectionPage";
+import { RecordsPage } from "./pages/RecordsPage";
 import { SavePage } from "./pages/SavePage";
 import { SearchPage } from "./pages/SearchPage";
 import { loadAppConfig } from "./services/configService";
@@ -120,6 +121,7 @@ function App() {
         />
         <Route path="/save" element={operatorId && pendingRecord ? <SavePage /> : <Navigate to="/form" />} />
         <Route path="/search" element={operatorId ? <SearchPage /> : <Navigate to="/" />} />
+        <Route path="/records" element={operatorId ? <RecordsPage /> : <Navigate to="/" />} />
         <Route path="/admin" element={<AdminConfigPage />} />
         <Route path="/admin/connections" element={<AdminConnectionsPage />} />
       </Routes>

@@ -441,6 +441,31 @@ textarea:focus {
   overflow-wrap: anywhere;
 }
 
+.history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-list article {
+  background: #f4f2ef;
+  border-left: 8px solid #151515;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+}
+
+.history-list strong {
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.history-list span,
+.history-list p {
+  color: #5f5b55;
+  font-weight: 700;
+  margin: 0;
+}
+
 .error-message,
 .success-message,
 .status-message {
@@ -695,6 +720,74 @@ dd {
   white-space: pre;
 }
 
+.records-toolbar,
+.records-summary {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(260px, 1fr) auto auto auto;
+}
+
+.records-summary {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.records-summary div {
+  background: #151515;
+  color: #ffffff;
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.records-summary span {
+  color: #d6d2ca;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.records-summary strong {
+  font-size: 1.75rem;
+  font-weight: 950;
+}
+
+.records-table-wrap {
+  background: #ffffff;
+  border: 1px solid #d6d2ca;
+  overflow-x: auto;
+}
+
+.records-table {
+  border-collapse: collapse;
+  min-width: 1120px;
+  width: 100%;
+}
+
+.records-table th,
+.records-table td {
+  border-bottom: 1px solid #d6d2ca;
+  padding: 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.records-table th {
+  background: #151515;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.records-table td {
+  color: #292724;
+  font-weight: 700;
+}
+
+.hidden-input {
+  display: none;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -728,6 +821,8 @@ dd {
   }
 
   .material-grid,
+  .records-toolbar,
+  .records-summary,
   .admin-save-bar,
   .admin-controls,
   .page-edit-actions,

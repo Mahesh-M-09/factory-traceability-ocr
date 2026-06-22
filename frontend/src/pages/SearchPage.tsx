@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CameraCapture } from "../components/CameraCapture";
 import { requestOcr } from "../services/api";
+import { findDemoRecord } from "../services/demoDatabaseService";
 import { cleanSerialNumber } from "../services/serial";
 import { useAppContext } from "../App";
 
@@ -11,8 +12,10 @@ export function SearchPage() {
   const [serialNumber, setSerialNumber] = useState("");
   const [showCamera, setShowCamera] = useState(false);
   const [status, setStatus] = useState("");
+  const [searchedSerial, setSearchedSerial] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const result = searchedSerial ? findDemoRecord(searchedSerial) : null;
 
   async function handleCapture(blob: Blob) {
     setLoading(true);
@@ -35,7 +38,8 @@ export function SearchPage() {
       setStatus("Enter or scan a serial number first.");
       return;
     }
-    setStatus("Ready to query the demo database once the Google Sheet read endpoint is connected.");
+    setSearchedSerial(serialNumber);
+    setStatus(findDemoRecord(serialNumber) ? "Record found in demo database." : "No local demo record found.");
   }
 
   return (
@@ -73,10 +77,45 @@ export function SearchPage() {
       </section>
       <section className="review-panel">
         <h2>Lookup Result</h2>
-        <div className="empty-state">
-          <h2>{serialNumber || "No serial selected"}</h2>
-          <p>Connect a Google Sheet or Power Automate read endpoint to show operation history here.</p>
-        </div>
+        {result ? (
+          <>
+            <dl className="compact-summary">
+              <div>
+                <dt>MF Serial</dt>
+                <dd>{result.serialNumber}</dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd>{result.status}</dd>
+              </div>
+              <div>
+                <dt>Hinge link</dt>
+                <dd>{result.linkedHingeSerial || "-"}</dd>
+              </div>
+              <div>
+                <dt>Batch</dt>
+                <dd>{result.batchNumber || "-"}</dd>
+              </div>
+            </dl>
+            <div className="history-list">
+              {result.events.map((event) => (
+                <article key={event.id ?? `${event.operation}-${event.dateTime}`}>
+                  <strong>{event.operation}</strong>
+                  <span>{new Date(event.dateTime).toLocaleString()} / ID {event.operatorId}</span>
+                  <p>
+                    Jig {event.formValues.jigUsed || "-"} - Cycle {event.cycleTimeSeconds ? `${event.cycleTimeSeconds}s` : "-"}
+                  </p>
+                </article>
+              ))}
+            </div>
+            {result.reworkLog.length > 0 && <p className="raw-text">Rework: {result.reworkLog.join(" | ")}</p>}
+          </>
+        ) : (
+          <div className="empty-state">
+            <h2>{searchedSerial || serialNumber || "No serial selected"}</h2>
+            <p>Search a serial to show saved demo database history.</p>
+          </div>
+        )}
         {showCamera && <CameraCapture autoCaptureEnabled={false} onCapture={handleCapture} />}
       </section>
     </main>

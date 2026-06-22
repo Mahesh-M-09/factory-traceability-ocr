@@ -67,14 +67,31 @@ export interface CaptureState {
 }
 
 export interface OperationRecord {
+  id?: string;
   operatorId: string;
   material: string;
   part: string;
   operation: string;
   serialNumber: string;
+  linkedHingeSerial?: string;
+  cycleTimeSeconds?: number;
   dateTime: string;
   ocrConfidence: number;
   manualCorrection: boolean;
   imageBase64: string;
   formValues: Record<string, string>;
+}
+
+export interface DemoTraceRecord {
+  serialNumber: string;
+  material: string;
+  part: string;
+  batchNumber: string;
+  status: string;
+  linkedHingeSerial: string;
+  createdAt: string;
+  updatedAt: string;
+  columns: Record<string, string>;
+  reworkLog: string[];
+  events: OperationRecord[];
 }
