@@ -35,12 +35,28 @@ export interface MaterialConfig {
   parts: PartConfig[];
 }
 
+export type AppUserRole = "operator" | "teamLead" | "admin";
+
+export interface AppUserAccess {
+  materialId: string;
+  partId: string;
+  operationIds: string[];
+}
+
+export interface AppUserConfig {
+  id: string;
+  name: string;
+  role: AppUserRole;
+  access: AppUserAccess[];
+}
+
 export interface AppConfig {
   adminPassword: string;
   adminCredentials?: {
     username: string;
     password: string;
   };
+  users?: AppUserConfig[];
   autoCaptureEnabled: boolean;
   ocrConfidenceThreshold: number;
   employees: string[];
@@ -103,6 +119,22 @@ export interface DemoTraceRecord {
   columns: Record<string, string>;
   reworkLog: string[];
   events: OperationRecord[];
+}
+
+export interface ReworkLogRecord {
+  id: string;
+  serialNumber: string;
+  material: string;
+  part: string;
+  tableName: string;
+  sourceOperation: string;
+  reason: string;
+  notes: string;
+  status: string;
+  openedBy: string;
+  openedAt: string;
+  closedBy: string;
+  closedAt: string;
 }
 
 export interface OperatorSessionLog {

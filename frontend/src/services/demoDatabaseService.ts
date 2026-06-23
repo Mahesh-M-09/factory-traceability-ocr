@@ -1,4 +1,4 @@
-import type { DemoTraceRecord, OperationRecord } from "../types/config";
+import type { DemoTraceRecord, OperationRecord, ReworkLogRecord } from "../types/config";
 
 const DEMO_DATABASE_KEY = "factoryTraceabilityDemoRecords";
 
@@ -17,6 +17,7 @@ const BASE_COLUMNS = [
   "lastJig",
   "lastRobot",
   "lastCycleTimeSeconds",
+  "operationCount",
   "reworkLog"
 ];
 
@@ -55,6 +56,8 @@ export function addManualDemoRecord(input: {
   part: string;
   batchNumber?: string;
   requiresInvestigation: boolean;
+  addedBy?: string;
+  notes?: string;
 }) {
   const serialNumber = input.serialNumber.trim().toUpperCase();
   const now = new Date().toISOString();
@@ -78,6 +81,12 @@ export function addManualDemoRecord(input: {
     requiresInvestigation: input.requiresInvestigation,
     updatedAt: now
   };
+  nextRecord.columns = {
+    ...(nextRecord.columns ?? {}),
+    ManualAddedBy: input.addedBy ?? "",
+    ManualAddNotes: input.notes ?? "",
+    ManualAddTime: now
+  };
   persistDemoRecords([...records.filter((record) => record.serialNumber.toUpperCase() !== serialNumber), nextRecord]);
 }
 
@@ -96,6 +105,63 @@ export function exportDemoRecordsCsv(records = loadDemoRecords()) {
     columns.map((column) => csvEscape(readCsvValue(record, column))).join(",")
   );
   return [columns.join(","), ...rows].join("\n");
+}
+
+export function getOperationHistory(records = loadDemoRecords()) {
+  return records.flatMap((record) =>
+    record.events.map((event) => ({
+      id: event.id ?? createEventId(event, event.serialNumber),
+      serialNumber: event.serialNumber,
+      tableName: record.tableName,
+      material: record.material,
+      part: record.part,
+      operation: event.operation,
+      operatorId: event.operatorId,
+      jig: event.formValues.jigUsed ?? event.formValues.jigCapture ?? "",
+      robot: event.formValues.robotNumber ?? event.formValues.robotUsed ?? "",
+      result: event.formValues.partStatus ?? event.formValues.passFail ?? event.formValues.reworkStatus ?? event.formValues.scrapStatus ?? "",
+      cycleTimeSeconds: event.cycleTimeSeconds ?? 0,
+      timestamp: event.dateTime,
+      notes: event.formValues.notes ?? "",
+      extraFields: JSON.stringify(event.formValues)
+    }))
+  );
+}
+
+export function getReworkHistory(records = loadDemoRecords()): ReworkLogRecord[] {
+  return records.flatMap((record) =>
+    record.reworkLog.map((entry, index) => ({
+      id: `${record.serialNumber}-rework-${index}`,
+      serialNumber: record.serialNumber,
+      material: record.material,
+      part: record.part,
+      tableName: record.tableName,
+      sourceOperation: readReworkSegment(entry, "operation") || "Unknown",
+      reason: readReworkSegment(entry, "reason") || entry,
+      notes: readReworkSegment(entry, "notes"),
+      status: readReworkSegment(entry, "status") || "Open",
+      openedBy: readReworkSegment(entry, "operator"),
+      openedAt: readReworkSegment(entry, "time"),
+      closedBy: "",
+      closedAt: ""
+    }))
+  );
+}
+
+export function exportOperationHistoryCsv(records = loadDemoRecords()) {
+  const columns = ["serialNumber", "tableName", "material", "part", "operation", "operatorId", "jig", "robot", "result", "cycleTimeSeconds", "timestamp", "notes", "extraFields"];
+  return [
+    columns.join(","),
+    ...getOperationHistory(records).map((row) => columns.map((column) => csvEscape(String(row[column as keyof typeof row] ?? ""))).join(","))
+  ].join("\n");
+}
+
+export function exportReworkHistoryCsv(records = loadDemoRecords()) {
+  const columns = ["serialNumber", "tableName", "material", "part", "sourceOperation", "reason", "notes", "status", "openedBy", "openedAt"];
+  return [
+    columns.join(","),
+    ...getReworkHistory(records).map((row) => columns.map((column) => csvEscape(String(row[column as keyof typeof row] ?? ""))).join(","))
+  ].join("\n");
 }
 
 export function importDemoRecordsCsv(csvText: string) {
@@ -133,7 +199,7 @@ function saveStampingBatch(records: DemoTraceRecord[], record: OperationRecord) 
       part: record.part,
       tableName: getTableName(record.material, record.part),
       batchNumber: record.formValues.batchNumber || `${startSerial}-${endSerial}`,
-      status: record.formValues.scrapStatus === "Scrap" ? "Scrap" : existing?.status || "Active",
+      status: record.formValues.scrapStatus === "Scrap" ? "Scrap" : record.formValues.scrapStatus === "Hold" ? "Hold" : existing?.status || "Active",
       requiresInvestigation: existing?.requiresInvestigation ?? false,
       linkedHingeSerial: existing?.linkedHingeSerial ?? "",
       createdAt: existing?.createdAt ?? now,
@@ -219,10 +285,10 @@ function splitSerial(value: string) {
 }
 
 function resolveStatus(record: OperationRecord, currentStatus: string) {
-  if (record.formValues.scrapStatus === "Scrap" || record.formValues.reworkStatus === "Scrap" || record.formValues.partStatus === "Fail") {
+  if (record.formValues.scrapStatus === "Scrap" || record.formValues.reworkStatus === "Scrap") {
     return "Scrap";
   }
-  if (record.formValues.partStatus === "Not OK" || record.formValues.passFail === "Fail") {
+  if (record.formValues.scrapStatus === "Hold" || record.formValues.partStatus === "Not OK" || record.formValues.passFail === "Fail") {
     return "Hold";
   }
   return currentStatus === "New" ? "Active" : currentStatus;
@@ -233,11 +299,27 @@ export function getTableName(material: string, part: string) {
 }
 
 function buildReworkEntry(record: OperationRecord) {
-  const value = record.formValues.reworkEntry || record.formValues.reworkStatus || "";
-  if (!value || value === "No Rework") {
+  const sendToRework = record.formValues.sendToRework === "Yes";
+  const value = record.formValues.reworkReason || record.formValues.reworkEntry || "";
+  if (!sendToRework && (!value || value === "No Rework")) {
     return "";
   }
-  return `[${record.operation}] ${value} - ${record.formValues.notes || "No action notes"} (${record.operatorId}, ${record.dateTime})`;
+  return [
+    `operation=${record.operation}`,
+    `reason=${value || "Rework requested"}`,
+    `notes=${record.formValues.notes || "No notes"}`,
+    `status=Open`,
+    `operator=${record.operatorId}`,
+    `time=${record.dateTime}`
+  ].join("; ");
+}
+
+function readReworkSegment(entry: string, key: string) {
+  const segment = entry
+    .split(";")
+    .map((item) => item.trim())
+    .find((item) => item.toLowerCase().startsWith(`${key.toLowerCase()}=`));
+  return segment ? segment.slice(key.length + 1).trim() : "";
 }
 
 function keyFromLabel(label: string) {
@@ -277,16 +359,45 @@ function readCsvValue(record: DemoTraceRecord, column: string) {
   if (column === "lastCycleTimeSeconds") {
     return String(record.events.at(-1)?.cycleTimeSeconds ?? "");
   }
+  if (column === "operationCount") {
+    return String(record.events.length);
+  }
   if (column === "reworkLog") {
     return record.reworkLog.join(" | ");
   }
   if (column === "requiresInvestigation") {
     return record.requiresInvestigation ? "TRUE" : "FALSE";
   }
-  if (column in record) {
-    return String(record[column as keyof DemoTraceRecord] ?? "");
+  const baseValue = readBaseColumn(record, column);
+  if (baseValue !== null) {
+    return baseValue;
   }
   return record.columns[column] ?? "";
+}
+
+function readBaseColumn(record: DemoTraceRecord, column: string) {
+  switch (column) {
+    case "serialNumber":
+      return record.serialNumber;
+    case "material":
+      return record.material;
+    case "part":
+      return record.part;
+    case "batchNumber":
+      return record.batchNumber;
+    case "status":
+      return record.status;
+    case "linkedHingeSerial":
+      return record.linkedHingeSerial;
+    case "createdAt":
+      return record.createdAt;
+    case "updatedAt":
+      return record.updatedAt;
+    case "tableName":
+      return record.tableName;
+    default:
+      return null;
+  }
 }
 
 function csvEscape(value: string) {

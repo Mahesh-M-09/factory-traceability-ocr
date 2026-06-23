@@ -49,12 +49,23 @@ function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
       required: true,
       options: ["Pass", "Fail"]
     },
-    scrapStatus: {
-      ...(config.fields.scrapStatus ?? {}),
-      label: "Scrap decision",
+    sendToRework: config.fields.sendToRework ?? {
+      label: "Send to rework",
       type: "select" as const,
       required: false,
-      options: ["Continue", "Scrap"]
+      options: ["No", "Yes"]
+    },
+    reworkReason: config.fields.reworkReason ?? {
+      label: "Rework reason",
+      type: "textarea" as const,
+      required: false
+    },
+    scrapStatus: {
+      ...(config.fields.scrapStatus ?? {}),
+      label: "Part status",
+      type: "select" as const,
+      required: false,
+      options: ["Active", "Hold", "Scrap"]
     },
     reworkEntry: config.fields.reworkEntry ?? {
       label: "Rework entry",
@@ -69,11 +80,7 @@ function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
     }
   };
 
-  return {
-    ...config,
-    adminCredentials: config.adminCredentials ?? { username: "Mahesh.CH", password: "Brompton1234" },
-    fields,
-    materials: config.materials.map((material) => ({
+  const materials = config.materials.map((material) => ({
       ...material,
       parts: ensureTraceabilityParts(material.id, material.parts).map((part) => {
         const partWithSerialRules = ensureSerialRules(part);
@@ -94,8 +101,44 @@ function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
           ]
         });
       })
-    }))
+    }));
+
+  return {
+    ...config,
+    adminCredentials: config.adminCredentials ?? { username: "Mahesh.CH", password: "Brompton1234" },
+    users: ensureDefaultUsers({ ...config, materials }),
+    fields,
+    materials
   };
+}
+
+function ensureDefaultUsers(config: AppConfig) {
+  if (config.users?.length) {
+    return config.users;
+  }
+
+  const allAccess = config.materials.flatMap((material) =>
+    material.parts.map((part) => ({
+      materialId: material.id,
+      partId: part.id,
+      operationIds: part.operations.map((operation) => operation.id)
+    }))
+  );
+
+  return [
+    {
+      id: "1201",
+      name: "Mahesh",
+      role: "operator" as const,
+      access: allAccess
+    },
+    {
+      id: "9001",
+      name: "Team Lead",
+      role: "teamLead" as const,
+      access: allAccess
+    }
+  ];
 }
 
 function ensureSerialRules(part: PartConfig): PartConfig {
@@ -152,25 +195,25 @@ function ensureTraceabilityOperations(part: PartConfig) {
         id: `${part.id}-robot-braze`,
         name: "MFFBBA Robot Braze",
         captureMode: "ocr",
-        requiredFields: ["robotNumber", "jigUsed", "scrapStatus", "notes"]
+        requiredFields: ["robotNumber", "jigUsed", "sendToRework", "reworkReason", "scrapStatus", "notes"]
       },
       {
         id: `${part.id}-manual-braze`,
         name: "MFFBBA Manual Braze",
         captureMode: "ocr",
-        requiredFields: ["jigUsed", "jigCapture", "scrapStatus", "notes"]
+        requiredFields: ["jigUsed", "jigCapture", "sendToRework", "reworkReason", "scrapStatus", "notes"]
       },
       {
         id: `${part.id}-assembly-link`,
         name: "Mainframe + MFFBBA Assembly",
         captureMode: "ocr",
-        requiredFields: ["hingeSerial", "jigUsed", "scrapStatus", "notes"]
+        requiredFields: ["hingeSerial", "jigUsed", "sendToRework", "reworkReason", "scrapStatus", "notes"]
       },
       {
         id: `${part.id}-akea`,
         name: "AKEA",
         captureMode: "ocr",
-        requiredFields: ["passFail", "scrapStatus", "reworkEntry", "notes"]
+        requiredFields: ["passFail", "sendToRework", "reworkReason", "scrapStatus", "reworkEntry", "notes"]
       }
     ]);
   }
@@ -187,7 +230,7 @@ function ensureTraceabilityOperations(part: PartConfig) {
         id: `${part.id}-braze`,
         name: "Hinge Braze",
         captureMode: "ocr",
-        requiredFields: ["jigUsed", "jigCapture", "scrapStatus", "notes"]
+        requiredFields: ["jigUsed", "jigCapture", "sendToRework", "reworkReason", "scrapStatus", "notes"]
       },
       {
         id: `${part.id}-final-rework`,

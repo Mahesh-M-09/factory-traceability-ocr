@@ -82,7 +82,7 @@ export function OperationFormPage() {
     const isStamping = operation.name.toLowerCase().includes("stamping");
     const scannedSerial = capture?.serialNumber.trim().toUpperCase() ?? "";
     if (!isStamping && scannedSerial && !findDemoRecord(scannedSerial)) {
-      setError("Part not recognised. Raise to team lead so an admin can add it with Investigation required.");
+      setError("Part not recognised. Raise to a team lead so they can add it with Investigation required.");
       return;
     }
 

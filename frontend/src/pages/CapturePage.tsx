@@ -5,7 +5,7 @@ import { useAppContext } from "../App";
 import { CameraCapture } from "../components/CameraCapture";
 import { requestOcr } from "../services/api";
 import { blobToBase64 } from "../services/image";
-import { cleanSerialNumber, getDefaultFrameType, isSerialValid } from "../services/serial";
+import { cleanSerialNumber } from "../services/serial";
 import { findOperation, findPart } from "../services/selection";
 
 export function CapturePage() {
@@ -19,18 +19,14 @@ export function CapturePage() {
   const [originalSerialNumber, setOriginalSerialNumber] = useState("");
   const [confidence, setConfidence] = useState(0);
   const [rawText, setRawText] = useState<string[]>([]);
-  const [frameTypeId, setFrameTypeId] = useState(getDefaultFrameType(config).id);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const uploadRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
 
-  const frameType = config.frameTypes.find((item) => item.id === frameTypeId) ?? getDefaultFrameType(config);
   const partPatterns = part?.serialPatterns ?? [];
-  const serialIsValid = partPatterns.length
-    ? partPatterns.some((pattern) => testPattern(pattern, serialNumber))
-    : isSerialValid(serialNumber, frameType);
-  const serialExample = part?.serialExample ?? frameType.example;
+  const serialIsValid = partPatterns.length ? partPatterns.some((pattern) => testPattern(pattern, serialNumber)) : Boolean(serialNumber);
+  const serialExample = part?.serialExample ?? "configured serial rule";
   const manualCorrection = Boolean(originalSerialNumber && serialNumber !== originalSerialNumber);
   const needsReview = confidence < config.ocrConfidenceThreshold || !serialIsValid || manualCorrection;
   const confidenceLabel = confidence ? `${Math.round(confidence * 100)}%` : "Not read";
@@ -84,7 +80,7 @@ export function CapturePage() {
       confidence,
       rawText,
       needsReview,
-      frameTypeId
+      frameTypeId: part?.id ?? ""
     });
     navigate("/form");
   }
@@ -125,17 +121,6 @@ export function CapturePage() {
             </div>
           </div>
         )}
-
-        <label className="field">
-          <span>Frame type</span>
-          <select value={frameTypeId} onChange={(event) => setFrameTypeId(event.target.value)}>
-            {config.frameTypes.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
 
         <label className="field">
           <span>Serial number</span>

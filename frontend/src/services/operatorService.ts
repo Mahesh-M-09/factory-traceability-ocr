@@ -27,5 +27,43 @@ export async function validateOperatorId(operatorId: string, config: AppConfig) 
     return result.active === true;
   }
 
-  return config.employees.includes(operatorId);
+  return config.employees.includes(operatorId) || Boolean(config.users?.some((user) => user.id === operatorId));
+}
+
+export function getConfiguredUser(operatorId: string, config: AppConfig) {
+  return config.users?.find((user) => user.id === operatorId);
+}
+
+export function canAccessMaterial(operatorId: string, materialId: string, config: AppConfig) {
+  const user = getConfiguredUser(operatorId, config);
+  if (!user || user.access.length === 0) {
+    return true;
+  }
+  return user.access.some((access) => access.materialId === materialId);
+}
+
+export function canAccessPart(operatorId: string, materialId: string, partId: string, config: AppConfig) {
+  const user = getConfiguredUser(operatorId, config);
+  if (!user || user.access.length === 0) {
+    return true;
+  }
+  return user.access.some((access) => access.materialId === materialId && access.partId === partId);
+}
+
+export function canAccessOperation(operatorId: string, materialId: string, partId: string, operationId: string, config: AppConfig) {
+  const user = getConfiguredUser(operatorId, config);
+  if (!user || user.access.length === 0) {
+    return true;
+  }
+  return user.access.some(
+    (access) =>
+      access.materialId === materialId &&
+      access.partId === partId &&
+      (access.operationIds.length === 0 || access.operationIds.includes(operationId))
+  );
+}
+
+export function canManuallyAddSerial(operatorId: string, config: AppConfig) {
+  const role = getConfiguredUser(operatorId, config)?.role;
+  return role === "teamLead" || role === "admin";
 }

@@ -1,11 +1,13 @@
 import { ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
+import { canAccessMaterial } from "../services/operatorService";
 
 export function MaterialSelectionPage() {
-  const { config, setSelectedMaterialId, setSelectedPartId, setSelectedOperationId, setCapture, setPendingRecord } =
+  const { config, operatorId, setSelectedMaterialId, setSelectedPartId, setSelectedOperationId, setCapture, setPendingRecord } =
     useAppContext();
   const navigate = useNavigate();
+  const materials = config.materials.filter((material) => canAccessMaterial(operatorId, material.id, config));
 
   return (
     <main className="page">
@@ -14,7 +16,7 @@ export function MaterialSelectionPage() {
         <p>Choose the frame family before selecting the part.</p>
       </div>
       <section className="choice-grid material-grid">
-        {config.materials.map((material) => (
+        {materials.map((material) => (
           <button
             className="choice-button"
             key={material.id}

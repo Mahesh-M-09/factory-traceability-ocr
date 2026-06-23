@@ -1,13 +1,17 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
+import { canAccessOperation } from "../services/operatorService";
 import { findMaterial, findPart } from "../services/selection";
 
 export function OperationSelectionPage() {
-  const { config, selectedMaterialId, selectedPartId, setSelectedOperationId, setCapture, setPendingRecord } = useAppContext();
+  const { config, operatorId, selectedMaterialId, selectedPartId, setSelectedOperationId, setCapture, setPendingRecord } = useAppContext();
   const navigate = useNavigate();
   const material = findMaterial(config, selectedMaterialId);
   const part = findPart(config, selectedMaterialId, selectedPartId);
+  const operations = part?.operations.filter((operation) =>
+    canAccessOperation(operatorId, selectedMaterialId, selectedPartId, operation.id, config)
+  ) ?? [];
 
   return (
     <main className="page">
@@ -19,14 +23,14 @@ export function OperationSelectionPage() {
         <h1>{part?.name ?? "Operations"}</h1>
         <p>{material?.name} production route.</p>
       </div>
-      {part && part.operations.length === 0 ? (
+      {part && operations.length === 0 ? (
         <section className="empty-state">
           <h2>No operations configured</h2>
           <p>Use Admin Config to add operations for this part.</p>
         </section>
       ) : (
         <section className="operation-grid">
-          {part?.operations.map((operation) => (
+          {operations.map((operation) => (
             <button
               className="operation-button"
               key={operation.id}

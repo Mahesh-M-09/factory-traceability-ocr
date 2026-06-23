@@ -1,13 +1,15 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
+import { canAccessPart } from "../services/operatorService";
 import { findMaterial } from "../services/selection";
 
 export function PartSelectionPage() {
-  const { config, selectedMaterialId, setSelectedPartId, setSelectedOperationId, setCapture, setPendingRecord } =
+  const { config, operatorId, selectedMaterialId, setSelectedPartId, setSelectedOperationId, setCapture, setPendingRecord } =
     useAppContext();
   const navigate = useNavigate();
   const material = findMaterial(config, selectedMaterialId);
+  const parts = material?.parts.filter((part) => canAccessPart(operatorId, selectedMaterialId, part.id, config)) ?? [];
 
   return (
     <main className="page">
@@ -20,7 +22,7 @@ export function PartSelectionPage() {
         <p>Select the part moving through production.</p>
       </div>
       <section className="choice-grid">
-        {material?.parts.map((part) => (
+        {parts.map((part) => (
           <button
             className="choice-button"
             key={part.id}
