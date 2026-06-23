@@ -172,6 +172,10 @@ textarea {
   border-top: 8px solid #151515;
 }
 
+.admin-login-panel {
+  margin-top: 18px;
+}
+
 .stack {
   display: grid;
   gap: 18px;
@@ -389,6 +393,7 @@ textarea:focus {
 
 .review-panel h2,
 .form-panel h2 {
+  color: #151515;
   font-size: 1.35rem;
   font-weight: 950;
   margin: 0;
@@ -432,6 +437,11 @@ textarea:focus {
   display: grid;
   gap: 8px;
   padding: 14px;
+}
+
+.review-meta span {
+  color: #292724;
+  font-weight: 900;
 }
 
 .raw-text {
@@ -604,7 +614,7 @@ dd {
   align-items: end;
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .page-edit-actions {
@@ -724,7 +734,7 @@ dd {
 .records-summary {
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(260px, 1fr) auto auto auto;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 }
 
 .records-summary {
@@ -786,6 +796,30 @@ dd {
 
 .hidden-input {
   display: none;
+}
+
+.upload-image-button {
+  margin-top: 14px;
+}
+
+.operation-field-block {
+  display: grid;
+  gap: 10px;
+}
+
+.table-action-button {
+  background: #ffffff;
+  border: 2px solid #e8382f;
+  color: #e8382f;
+  cursor: pointer;
+  font-weight: 950;
+  padding: 8px 10px;
+  text-transform: uppercase;
+}
+
+.table-action-button:hover {
+  background: #e8382f;
+  color: #ffffff;
 }
 
 @keyframes spin {

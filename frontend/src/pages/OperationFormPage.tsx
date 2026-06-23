@@ -1,10 +1,14 @@
-import { ChevronLeft } from "lucide-react";
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { Camera, ChevronLeft, Upload } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
 import { FieldRenderer } from "../components/FieldRenderer";
+import { CameraCapture } from "../components/CameraCapture";
+import { requestOcr } from "../services/api";
 import { findDemoRecord } from "../services/demoDatabaseService";
+import { cleanSerialNumber } from "../services/serial";
 import { findMaterial, findOperation, findPart } from "../services/selection";
+import { recordOperationVisit } from "../services/sessionLogService";
 
 export function OperationFormPage() {
   const { config, operatorId, selectedMaterialId, selectedPartId, selectedOperationId, capture, setPendingRecord } =
@@ -15,11 +19,50 @@ export function OperationFormPage() {
   const navigate = useNavigate();
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
+  const [showHingeCamera, setShowHingeCamera] = useState(false);
+  const [hingeStatus, setHingeStatus] = useState("");
   const timerStartedAt = useRef(Date.now());
+  const visitStartedAt = useRef(new Date().toISOString());
+  const hingeUploadRef = useRef<HTMLInputElement | null>(null);
 
   const fields = useMemo(() => {
     return operation?.requiredFields.map((fieldId) => [fieldId, config.fields[fieldId]] as const).filter(([, field]) => field) ?? [];
   }, [config.fields, operation]);
+
+  useEffect(() => {
+    return () => {
+      if (operatorId && material && part && operation) {
+        recordOperationVisit({
+          operatorId,
+          material: material.name,
+          part: part.name,
+          operation: operation.name,
+          enteredAt: visitStartedAt.current
+        });
+      }
+    };
+  }, [material, operation, operatorId, part]);
+
+  async function captureHingeSerial(blob: Blob) {
+    setHingeStatus("Reading hinge serial...");
+    try {
+      const result = await requestOcr(blob);
+      const cleaned = cleanSerialNumber(result.serialNumber ?? "", config.allowedCharacters);
+      setFormValues((current) => ({ ...current, hingeSerial: cleaned }));
+      setHingeStatus(`Hinge OCR confidence: ${result.confidence ? Math.round(result.confidence * 100) : 0}%`);
+      setShowHingeCamera(false);
+    } catch (hingeError) {
+      setHingeStatus(hingeError instanceof Error ? hingeError.message : "Hinge OCR failed.");
+    }
+  }
+
+  async function uploadHingeSerial(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) {
+      await captureHingeSerial(file);
+    }
+    event.target.value = "";
+  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -39,7 +82,7 @@ export function OperationFormPage() {
     const isStamping = operation.name.toLowerCase().includes("stamping");
     const scannedSerial = capture?.serialNumber.trim().toUpperCase() ?? "";
     if (!isStamping && scannedSerial && !findDemoRecord(scannedSerial)) {
-      setError("Part not recognised. Complete stamping first or upload the serial into the demo database.");
+      setError("Part not recognised. Raise to team lead so an admin can add it with Investigation required.");
       return;
     }
 
@@ -57,6 +100,7 @@ export function OperationFormPage() {
       operatorId,
       material: material.name,
       part: part.name,
+      tableName: `${material.name}_${part.name}`.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, ""),
       operation: operation.name,
       serialNumber: capture?.serialNumber ?? formValues.startSerial?.trim().toUpperCase() ?? "",
       linkedHingeSerial: hingeSerial,
@@ -109,14 +153,30 @@ export function OperationFormPage() {
         <h2>Operation Details</h2>
         <form className="stack" onSubmit={handleSubmit}>
           {fields.map(([fieldId, field]) => (
-            <FieldRenderer
-              key={fieldId}
-              id={fieldId}
-              field={field}
-              value={formValues[fieldId] ?? ""}
-              onChange={(value) => setFormValues((current) => ({ ...current, [fieldId]: value }))}
-            />
+            <div className="operation-field-block" key={fieldId}>
+              <FieldRenderer
+                id={fieldId}
+                field={field}
+                value={formValues[fieldId] ?? ""}
+                onChange={(value) => setFormValues((current) => ({ ...current, [fieldId]: value }))}
+              />
+              {fieldId === "hingeSerial" && (
+                <div className="button-row">
+                  <button type="button" className="secondary-button" onClick={() => setShowHingeCamera((current) => !current)}>
+                    <Camera size={22} />
+                    {showHingeCamera ? "Hide hinge camera" : "Scan hinge"}
+                  </button>
+                  <button type="button" className="secondary-button" onClick={() => hingeUploadRef.current?.click()}>
+                    <Upload size={22} />
+                    Upload hinge image
+                  </button>
+                  <input ref={hingeUploadRef} className="hidden-input" type="file" accept="image/*" onChange={uploadHingeSerial} />
+                </div>
+              )}
+            </div>
           ))}
+          {showHingeCamera && <CameraCapture autoCaptureEnabled={false} onCapture={captureHingeSerial} />}
+          {hingeStatus && <div className="status-message">{hingeStatus}</div>}
           {error && <div className="error-message">{error}</div>}
           <div className="button-row">
             <button

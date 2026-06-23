@@ -13,7 +13,9 @@ import { RecordsPage } from "./pages/RecordsPage";
 import { SavePage } from "./pages/SavePage";
 import { SearchPage } from "./pages/SearchPage";
 import { loadAppConfig } from "./services/configService";
+import { clearAdminUser, getStoredAdminUser } from "./services/adminAuthService";
 import { getStoredOperatorId } from "./services/operatorService";
+import { endOperatorSession } from "./services/sessionLogService";
 import { findOperation } from "./services/selection";
 import type { AppConfig, CaptureState, OperationRecord } from "./types/config";
 
@@ -22,6 +24,8 @@ export interface AppContextValue {
   setConfig: (config: AppConfig) => void;
   operatorId: string;
   setOperatorId: (operatorId: string) => void;
+  adminUser: string;
+  setAdminUser: (adminUser: string) => void;
   selectedMaterialId: string;
   setSelectedMaterialId: (materialId: string) => void;
   selectedPartId: string;
@@ -40,6 +44,7 @@ function App() {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [loadError, setLoadError] = useState("");
   const [operatorId, setOperatorId] = useState(getStoredOperatorId());
+  const [adminUser, setAdminUser] = useState(getStoredAdminUser());
   const [selectedMaterialId, setSelectedMaterialId] = useState("");
   const [selectedPartId, setSelectedPartId] = useState("");
   const [selectedOperationId, setSelectedOperationId] = useState("");
@@ -61,6 +66,8 @@ function App() {
       setConfig,
       operatorId,
       setOperatorId,
+      adminUser,
+      setAdminUser,
       selectedMaterialId,
       setSelectedMaterialId,
       selectedPartId,
@@ -72,7 +79,7 @@ function App() {
       pendingRecord,
       setPendingRecord
     };
-  }, [capture, config, operatorId, pendingRecord, selectedMaterialId, selectedOperationId, selectedPartId]);
+  }, [adminUser, capture, config, operatorId, pendingRecord, selectedMaterialId, selectedOperationId, selectedPartId]);
 
   if (loadError) {
     return <main className="center-screen error-panel">{loadError}</main>;
@@ -86,9 +93,13 @@ function App() {
     <AppContext.Provider value={contextValue}>
       <Header
         operatorId={operatorId}
+        adminUser={adminUser}
         onLogout={() => {
+          endOperatorSession();
+          clearAdminUser();
           sessionStorage.clear();
           setOperatorId("");
+          setAdminUser("");
           setSelectedMaterialId("");
           setSelectedPartId("");
           setSelectedOperationId("");
@@ -121,7 +132,7 @@ function App() {
         />
         <Route path="/save" element={operatorId && pendingRecord ? <SavePage /> : <Navigate to="/form" />} />
         <Route path="/search" element={operatorId ? <SearchPage /> : <Navigate to="/" />} />
-        <Route path="/records" element={operatorId ? <RecordsPage /> : <Navigate to="/" />} />
+        <Route path="/records" element={operatorId || adminUser ? <RecordsPage /> : <Navigate to="/" />} />
         <Route path="/admin" element={<AdminConfigPage />} />
         <Route path="/admin/connections" element={<AdminConnectionsPage />} />
       </Routes>

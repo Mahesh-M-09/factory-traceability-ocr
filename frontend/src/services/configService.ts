@@ -49,11 +49,12 @@ function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
       required: true,
       options: ["Pass", "Fail"]
     },
-    scrapStatus: config.fields.scrapStatus ?? {
-      label: "Scrap status",
+    scrapStatus: {
+      ...(config.fields.scrapStatus ?? {}),
+      label: "Scrap decision",
       type: "select" as const,
       required: false,
-      options: ["Active", "Scrap"]
+      options: ["Continue", "Scrap"]
     },
     reworkEntry: config.fields.reworkEntry ?? {
       label: "Rework entry",
@@ -70,16 +71,18 @@ function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
 
   return {
     ...config,
+    adminCredentials: config.adminCredentials ?? { username: "Mahesh.CH", password: "Brompton1234" },
     fields,
     materials: config.materials.map((material) => ({
       ...material,
       parts: ensureTraceabilityParts(material.id, material.parts).map((part) => {
+        const partWithSerialRules = ensureSerialRules(part);
         const hasRework = part.operations.some((operation) => operation.name.toLowerCase().includes("rework"));
         if (hasRework) {
-          return ensureTraceabilityOperations(part);
+          return ensureTraceabilityOperations(partWithSerialRules);
         }
         return ensureTraceabilityOperations({
-          ...part,
+          ...partWithSerialRules,
           operations: [
             ...part.operations,
             {
@@ -92,6 +95,26 @@ function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
         });
       })
     }))
+  };
+}
+
+function ensureSerialRules(part: PartConfig): PartConfig {
+  if (part.serialPatterns?.length) {
+    return part;
+  }
+
+  if (part.name.toLowerCase() === "mainframe") {
+    return {
+      ...part,
+      serialPatterns: ["^[0-9]{7}$", "^G[0-9]{6}$", "^T[0-9]{6}$"],
+      serialExample: "1234567, G123456, or T123456"
+    };
+  }
+
+  return {
+    ...part,
+    serialPatterns: ["^[A-Z0-9]{3,12}$"],
+    serialExample: "3 to 12 letters/numbers"
   };
 }
 

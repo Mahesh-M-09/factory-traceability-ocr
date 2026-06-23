@@ -23,8 +23,7 @@ interface Candidate {
 }
 
 interface FunctionContext {
-  log: {
-    info: (message: string) => void;
+  log: ((message: string) => void) & {
     error: (error: unknown) => void;
   };
   res?: {
@@ -47,7 +46,7 @@ interface OcrRequestBody {
 async function ocr(context: FunctionContext, request: FunctionRequest) {
   try {
     const image = getImageFromRequest(request);
-    context.log.info(`OCR image bytes received: ${image.length}`);
+    context.log(`OCR image bytes received: ${image.length}`);
     const visionResult = await callAzureVision(image);
     const candidates = extractCandidates(visionResult);
     const selected = selectBestCandidate(candidates);
@@ -135,8 +134,6 @@ async function callAzureVision(image: Buffer): Promise<AzureReadResult> {
     throw new Error("Azure Vision settings are missing.");
   }
 
-  const imageBody = Uint8Array.from(image).buffer;
-
   const response = await fetch(
     `${endpoint.replace(/\/$/, "")}/computervision/imageanalysis:analyze?features=read&api-version=2024-02-01`,
     {
@@ -145,7 +142,7 @@ async function callAzureVision(image: Buffer): Promise<AzureReadResult> {
         "Content-Type": "application/octet-stream",
         "Ocp-Apim-Subscription-Key": key
       },
-      body: imageBody
+      body: image
     }
   );
 

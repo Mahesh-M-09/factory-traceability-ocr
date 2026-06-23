@@ -8,6 +8,7 @@ const BASE_COLUMNS = [
   "part",
   "batchNumber",
   "status",
+  "requiresInvestigation",
   "linkedHingeSerial",
   "createdAt",
   "updatedAt",
@@ -27,7 +28,7 @@ export function loadDemoRecords(): DemoTraceRecord[] {
 
   try {
     const records = JSON.parse(saved) as DemoTraceRecord[];
-    return Array.isArray(records) ? records : [];
+    return Array.isArray(records) ? records.map(normalizeRecord) : [];
   } catch {
     return [];
   }
@@ -46,6 +47,47 @@ export function saveDemoOperation(record: OperationRecord) {
 export function findDemoRecord(serialNumber: string) {
   const needle = serialNumber.trim().toUpperCase();
   return loadDemoRecords().find((record) => record.serialNumber.toUpperCase() === needle);
+}
+
+export function addManualDemoRecord(input: {
+  serialNumber: string;
+  material: string;
+  part: string;
+  batchNumber?: string;
+  requiresInvestigation: boolean;
+}) {
+  const serialNumber = input.serialNumber.trim().toUpperCase();
+  const now = new Date().toISOString();
+  const records = loadDemoRecords();
+  const existing = records.find((record) => record.serialNumber.toUpperCase() === serialNumber);
+  const nextRecord: DemoTraceRecord = {
+    ...(existing ?? {
+      serialNumber,
+      linkedHingeSerial: "",
+      createdAt: now,
+      columns: {},
+      reworkLog: [],
+      events: []
+    }),
+    serialNumber,
+    material: input.material,
+    part: input.part,
+    tableName: getTableName(input.material, input.part),
+    batchNumber: input.batchNumber ?? existing?.batchNumber ?? "Manual",
+    status: existing?.status ?? "Active",
+    requiresInvestigation: input.requiresInvestigation,
+    updatedAt: now
+  };
+  persistDemoRecords([...records.filter((record) => record.serialNumber.toUpperCase() !== serialNumber), nextRecord]);
+}
+
+export function deleteDemoRecord(serialNumber: string) {
+  const needle = serialNumber.trim().toUpperCase();
+  persistDemoRecords(loadDemoRecords().filter((record) => record.serialNumber.toUpperCase() !== needle));
+}
+
+export function getDemoTables(records = loadDemoRecords()) {
+  return Array.from(new Set(records.map((record) => record.tableName))).sort();
 }
 
 export function exportDemoRecordsCsv(records = loadDemoRecords()) {
@@ -89,8 +131,10 @@ function saveStampingBatch(records: DemoTraceRecord[], record: OperationRecord) 
       serialNumber,
       material: record.material,
       part: record.part,
+      tableName: getTableName(record.material, record.part),
       batchNumber: record.formValues.batchNumber || `${startSerial}-${endSerial}`,
       status: record.formValues.scrapStatus === "Scrap" ? "Scrap" : existing?.status || "Active",
+      requiresInvestigation: existing?.requiresInvestigation ?? false,
       linkedHingeSerial: existing?.linkedHingeSerial ?? "",
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
@@ -121,8 +165,10 @@ function saveSingleOperation(records: DemoTraceRecord[], record: OperationRecord
     serialNumber,
     material: existing?.material ?? record.material,
     part: existing?.part ?? record.part,
+    tableName: existing?.tableName ?? getTableName(record.material, record.part),
     batchNumber: existing?.batchNumber ?? record.formValues.batchNumber ?? "",
     status,
+    requiresInvestigation: existing?.requiresInvestigation ?? false,
     linkedHingeSerial: record.linkedHingeSerial || existing?.linkedHingeSerial || record.formValues.hingeSerial || "",
     createdAt: existing?.createdAt ?? record.dateTime,
     updatedAt: record.dateTime,
@@ -182,6 +228,10 @@ function resolveStatus(record: OperationRecord, currentStatus: string) {
   return currentStatus === "New" ? "Active" : currentStatus;
 }
 
+export function getTableName(material: string, part: string) {
+  return `${material}_${part}`.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
 function buildReworkEntry(record: OperationRecord) {
   const value = record.formValues.reworkEntry || record.formValues.reworkStatus || "";
   if (!value || value === "No Rework") {
@@ -208,7 +258,7 @@ function persistDemoRecords(records: DemoTraceRecord[]) {
 
 function getCsvColumns(records: DemoTraceRecord[]) {
   const dynamicColumns = Array.from(new Set(records.flatMap((record) => Object.keys(record.columns)))).sort();
-  return [...BASE_COLUMNS, ...dynamicColumns];
+  return [...BASE_COLUMNS, ...dynamicColumns, "tableName"];
 }
 
 function readCsvValue(record: DemoTraceRecord, column: string) {
@@ -229,6 +279,9 @@ function readCsvValue(record: DemoTraceRecord, column: string) {
   }
   if (column === "reworkLog") {
     return record.reworkLog.join(" | ");
+  }
+  if (column === "requiresInvestigation") {
+    return record.requiresInvestigation ? "TRUE" : "FALSE";
   }
   if (column in record) {
     return String(record[column as keyof DemoTraceRecord] ?? "");
@@ -278,19 +331,32 @@ function parseCsv(csvText: string) {
 function rowToRecord(headers: string[], row: string[]): DemoTraceRecord {
   const values = Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""]));
   const columns = Object.fromEntries(
-    headers.filter((header) => !BASE_COLUMNS.includes(header)).map((header) => [header, values[header] ?? ""])
+    headers.filter((header) => !BASE_COLUMNS.includes(header) && header !== "tableName").map((header) => [header, values[header] ?? ""])
   );
   return {
     serialNumber: values.serialNumber ?? "",
     material: values.material ?? "",
     part: values.part ?? "",
+    tableName: values.tableName || getTableName(values.material ?? "", values.part ?? ""),
     batchNumber: values.batchNumber ?? "",
     status: values.status ?? "Active",
+    requiresInvestigation: values.requiresInvestigation?.toUpperCase() === "TRUE",
     linkedHingeSerial: values.linkedHingeSerial ?? "",
     createdAt: values.createdAt ?? new Date().toISOString(),
     updatedAt: values.updatedAt ?? new Date().toISOString(),
     columns,
     reworkLog: values.reworkLog ? values.reworkLog.split("|").map((item) => item.trim()).filter(Boolean) : [],
     events: []
+  };
+}
+
+function normalizeRecord(record: DemoTraceRecord): DemoTraceRecord {
+  return {
+    ...record,
+    tableName: record.tableName || getTableName(record.material, record.part),
+    requiresInvestigation: Boolean(record.requiresInvestigation),
+    columns: record.columns ?? {},
+    reworkLog: record.reworkLog ?? [],
+    events: record.events ?? []
   };
 }

@@ -24,6 +24,8 @@ export interface OperationConfig {
 export interface PartConfig {
   id: string;
   name: string;
+  serialPatterns?: string[];
+  serialExample?: string;
   operations: OperationConfig[];
 }
 
@@ -35,6 +37,10 @@ export interface MaterialConfig {
 
 export interface AppConfig {
   adminPassword: string;
+  adminCredentials?: {
+    username: string;
+    password: string;
+  };
   autoCaptureEnabled: boolean;
   ocrConfidenceThreshold: number;
   employees: string[];
@@ -55,7 +61,7 @@ export interface OcrResult {
 }
 
 export interface CaptureState {
-  imageBlob: Blob;
+  imageBlob: Blob | null;
   imageBase64: string;
   previewUrl: string;
   serialNumber: string;
@@ -71,6 +77,7 @@ export interface OperationRecord {
   operatorId: string;
   material: string;
   part: string;
+  tableName?: string;
   operation: string;
   serialNumber: string;
   linkedHingeSerial?: string;
@@ -86,12 +93,32 @@ export interface DemoTraceRecord {
   serialNumber: string;
   material: string;
   part: string;
+  tableName: string;
   batchNumber: string;
   status: string;
+  requiresInvestigation: boolean;
   linkedHingeSerial: string;
   createdAt: string;
   updatedAt: string;
   columns: Record<string, string>;
   reworkLog: string[];
   events: OperationRecord[];
+}
+
+export interface OperatorSessionLog {
+  id: string;
+  operatorId: string;
+  signedInAt: string;
+  signedOutAt: string;
+}
+
+export interface OperationVisitLog {
+  id: string;
+  operatorId: string;
+  material: string;
+  part: string;
+  operation: string;
+  enteredAt: string;
+  exitedAt: string;
+  seconds: number;
 }

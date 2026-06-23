@@ -1,5 +1,9 @@
 {
   "adminPassword": "change-me",
+  "adminCredentials": {
+    "username": "Mahesh.CH",
+    "password": "Brompton1234"
+  },
   "autoCaptureEnabled": false,
   "ocrConfidenceThreshold": 0.86,
   "employees": ["1234", "2345", "3456", "4567"],
@@ -26,6 +30,8 @@
         {
           "id": "steel-mainframe",
           "name": "Mainframe",
+          "serialPatterns": ["^[0-9]{7}$", "^G[0-9]{6}$", "^T[0-9]{6}$"],
+          "serialExample": "1234567, G123456, or T123456",
           "operations": [
             {
               "id": "steel-mainframe-stamping",
@@ -110,6 +116,8 @@
         {
           "id": "titanium-mainframe",
           "name": "Mainframe",
+          "serialPatterns": ["^[0-9]{7}$", "^G[0-9]{6}$", "^T[0-9]{6}$"],
+          "serialExample": "1234567, G123456, or T123456",
           "operations": [
             {
               "id": "titanium-mainframe-final-rework",
@@ -209,6 +217,12 @@
       "type": "select",
       "required": true,
       "options": ["OK", "Not OK"]
+    },
+    "scrapStatus": {
+      "label": "Scrap decision",
+      "type": "select",
+      "required": false,
+      "options": ["Continue", "Scrap"]
     },
     "reworkStatus": {
       "label": "Final rework",

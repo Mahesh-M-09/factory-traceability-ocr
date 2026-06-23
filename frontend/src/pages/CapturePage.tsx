@@ -1,5 +1,5 @@
-import { CheckCircle2, ChevronLeft, RotateCcw } from "lucide-react";
-import { useState } from "react";
+import { CheckCircle2, ChevronLeft, RotateCcw, Upload } from "lucide-react";
+import { ChangeEvent, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
 import { CameraCapture } from "../components/CameraCapture";
@@ -22,10 +22,15 @@ export function CapturePage() {
   const [frameTypeId, setFrameTypeId] = useState(getDefaultFrameType(config).id);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const uploadRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
 
   const frameType = config.frameTypes.find((item) => item.id === frameTypeId) ?? getDefaultFrameType(config);
-  const serialIsValid = isSerialValid(serialNumber, frameType);
+  const partPatterns = part?.serialPatterns ?? [];
+  const serialIsValid = partPatterns.length
+    ? partPatterns.some((pattern) => testPattern(pattern, serialNumber))
+    : isSerialValid(serialNumber, frameType);
+  const serialExample = part?.serialExample ?? frameType.example;
   const manualCorrection = Boolean(originalSerialNumber && serialNumber !== originalSerialNumber);
   const needsReview = confidence < config.ocrConfidenceThreshold || !serialIsValid || manualCorrection;
   const confidenceLabel = confidence ? `${Math.round(confidence * 100)}%` : "Not read";
@@ -52,13 +57,21 @@ export function CapturePage() {
     }
   }
 
+  async function handleUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) {
+      await handleCapture(file);
+    }
+    event.target.value = "";
+  }
+
   function confirmCapture() {
-    if (!imageBlob || !imageBase64) {
-      setError("Capture an image before continuing.");
+    if (!serialNumber) {
+      setError("Enter or scan a serial number before continuing.");
       return;
     }
     if (!serialIsValid) {
-      setError(`Serial must match ${frameType.example}.`);
+      setError(`Serial must match ${serialExample}.`);
       return;
     }
 
@@ -85,9 +98,14 @@ export function CapturePage() {
         </button>
         <div className="page-heading">
           <h1>{operation?.name ?? "Capture"}</h1>
-          <p>{part?.name}: capture the stamped serial number.</p>
+          <p>{part?.name}: capture, upload, or type the stamped serial number.</p>
         </div>
         <CameraCapture autoCaptureEnabled={config.autoCaptureEnabled} onCapture={handleCapture} />
+        <button className="secondary-button upload-image-button" onClick={() => uploadRef.current?.click()}>
+          <Upload size={22} />
+          Upload image
+        </button>
+        <input ref={uploadRef} className="hidden-input" type="file" accept="image/*" onChange={handleUpload} />
       </section>
 
       <section className="review-panel">
@@ -131,7 +149,7 @@ export function CapturePage() {
         <div className="review-meta">
           <span>Confidence: {confidenceLabel}</span>
           <span className={serialIsValid ? "valid-text" : "error-text"}>
-            {serialIsValid ? "Format valid" : `Expected ${frameType.example}`}
+            {serialIsValid ? "Format valid" : `Expected ${serialExample}`}
           </span>
           {needsReview && <span className="warning-text">Review required</span>}
         </div>
@@ -143,7 +161,7 @@ export function CapturePage() {
             <RotateCcw size={22} />
             Operations
           </button>
-          <button className="primary-button" onClick={confirmCapture} disabled={!imageBlob || loading}>
+          <button className="primary-button" onClick={confirmCapture} disabled={!serialNumber || loading}>
             <CheckCircle2 size={24} />
             Confirm serial
           </button>
@@ -151,4 +169,12 @@ export function CapturePage() {
       </section>
     </main>
   );
+}
+
+function testPattern(pattern: string, value: string) {
+  try {
+    return new RegExp(pattern).test(value);
+  } catch {
+    return false;
+  }
 }

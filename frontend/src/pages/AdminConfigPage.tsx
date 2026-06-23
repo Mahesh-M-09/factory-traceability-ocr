@@ -1,14 +1,18 @@
-import { ChevronLeft, Download, Link, Pencil, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronLeft, Download, Link, Pencil, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
+import { storeAdminUser, validateAdminLogin } from "../services/adminAuthService";
 import { resetAppConfig, saveAppConfig } from "../services/configService";
-import type { AppConfig, FieldType } from "../types/config";
+import { clearOperatorId } from "../services/operatorService";
+import { endOperatorSession } from "../services/sessionLogService";
+import type { AppConfig, FieldType, PartConfig } from "../types/config";
 
 export function AdminConfigPage() {
-  const { config, setConfig } = useAppContext();
+  const { config, setConfig, adminUser, setAdminUser, setOperatorId } = useAppContext();
+  const [adminName, setAdminName] = useState("");
   const [password, setPassword] = useState("");
-  const [unlocked, setUnlocked] = useState(false);
+  const [unlocked, setUnlocked] = useState(Boolean(adminUser));
   const [draftConfig, setDraftConfig] = useState(config);
   const [jsonText, setJsonText] = useState(JSON.stringify(config, null, 2));
   const [adminMaterialId, setAdminMaterialId] = useState(config.materials[0]?.id ?? "");
@@ -24,10 +28,16 @@ export function AdminConfigPage() {
 
   function unlock(event: FormEvent) {
     event.preventDefault();
-    if (password !== config.adminPassword) {
-      setError("Incorrect admin password.");
+    if (!validateAdminLogin(adminName, password, config.adminCredentials) && password !== config.adminPassword) {
+      setError("Incorrect admin username or password.");
       return;
     }
+    const nextAdminUser = adminName || config.adminCredentials?.username || "Mahesh.CH";
+    endOperatorSession();
+    clearOperatorId();
+    storeAdminUser(nextAdminUser);
+    setOperatorId("");
+    setAdminUser(nextAdminUser);
     setUnlocked(true);
     setError("");
   }
@@ -147,6 +157,50 @@ export function AdminConfigPage() {
     updateDraft(nextConfig);
   }
 
+  function addPart() {
+    if (!adminMaterial) {
+      return;
+    }
+    const name = window.prompt("Part page name");
+    if (!name) {
+      return;
+    }
+    const serialExample = window.prompt("Serial examples shown to users", "1234567, G123456, or T123456") ?? "";
+    const serialPatternText =
+      window.prompt("Serial regex rules separated by commas", "^[0-9]{7}$,^G[0-9]{6}$,^T[0-9]{6}$") ?? "";
+    const id = `${adminMaterial.id}-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+    const part: PartConfig = {
+      id,
+      name,
+      serialExample,
+      serialPatterns: serialPatternText.split(",").map((item) => item.trim()).filter(Boolean),
+      operations: []
+    };
+    updateDraft({
+      ...draftConfig,
+      materials: draftConfig.materials.map((material) =>
+        material.id === adminMaterialId ? { ...material, parts: [...material.parts, part] } : material
+      )
+    });
+    setAdminPartId(id);
+    setAdminOperationId("");
+  }
+
+  function addMaterial() {
+    const name = window.prompt("Material page name");
+    if (!name) {
+      return;
+    }
+    const id = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    updateDraft({
+      ...draftConfig,
+      materials: [...draftConfig.materials, { id, name, parts: [] }]
+    });
+    setAdminMaterialId(id);
+    setAdminPartId("");
+    setAdminOperationId("");
+  }
+
   function editSelectedMaterial() {
     if (!adminMaterial) {
       return;
@@ -177,6 +231,64 @@ export function AdminConfigPage() {
           : {
               ...material,
               parts: material.parts.map((part) => (part.id === adminPartId ? { ...part, name } : part))
+            }
+      )
+    });
+  }
+
+  function moveSelectedMaterial(direction: -1 | 1) {
+    const nextMaterials = moveItem(draftConfig.materials, adminMaterialId, direction);
+    updateDraft({ ...draftConfig, materials: nextMaterials });
+  }
+
+  function moveSelectedPart(direction: -1 | 1) {
+    updateDraft({
+      ...draftConfig,
+      materials: draftConfig.materials.map((material) =>
+        material.id !== adminMaterialId ? material : { ...material, parts: moveItem(material.parts, adminPartId, direction) }
+      )
+    });
+  }
+
+  function moveSelectedOperation(direction: -1 | 1) {
+    updateDraft({
+      ...draftConfig,
+      materials: draftConfig.materials.map((material) =>
+        material.id !== adminMaterialId
+          ? material
+          : {
+              ...material,
+              parts: material.parts.map((part) =>
+                part.id !== adminPartId ? part : { ...part, operations: moveItem(part.operations, adminOperationId, direction) }
+              )
+            }
+      )
+    });
+  }
+
+  function editPartSerialRules() {
+    if (!adminPart) {
+      return;
+    }
+    const serialExample = window.prompt("Serial examples shown to users", adminPart.serialExample ?? "") ?? adminPart.serialExample ?? "";
+    const serialPatternText =
+      window.prompt("Serial regex rules separated by commas", adminPart.serialPatterns?.join(",") ?? "") ?? adminPart.serialPatterns?.join(",") ?? "";
+    updateDraft({
+      ...draftConfig,
+      materials: draftConfig.materials.map((material) =>
+        material.id !== adminMaterialId
+          ? material
+          : {
+              ...material,
+              parts: material.parts.map((part) =>
+                part.id === adminPartId
+                  ? {
+                      ...part,
+                      serialExample,
+                      serialPatterns: serialPatternText.split(",").map((item) => item.trim()).filter(Boolean)
+                    }
+                  : part
+              )
             }
       )
     });
@@ -344,7 +456,11 @@ export function AdminConfigPage() {
           <h1>Admin Config</h1>
           <form className="stack" onSubmit={unlock}>
             <label className="field">
-              <span>Password</span>
+              <span>Admin username</span>
+              <input value={adminName} onChange={(event) => setAdminName(event.target.value)} autoComplete="username" />
+            </label>
+            <label className="field">
+              <span>Admin password</span>
               <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
             </label>
             {error && <div className="error-message">{error}</div>}
@@ -434,16 +550,44 @@ export function AdminConfigPage() {
             <Plus size={22} />
             Add operation
           </button>
+          <button className="secondary-button" onClick={addPart}>
+            <Plus size={22} />
+            Add part
+          </button>
+          <button className="secondary-button" onClick={addMaterial}>
+            <Plus size={22} />
+            Add material
+          </button>
         </div>
 
         <div className="page-edit-actions">
           <button className="secondary-button" onClick={editSelectedMaterial}>
             <Pencil size={22} />
-            Edit material page
+            Rename material page
+          </button>
+          <button className="secondary-button" onClick={() => moveSelectedMaterial(-1)}>
+            <ArrowUp size={22} />
+            Material up
+          </button>
+          <button className="secondary-button" onClick={() => moveSelectedMaterial(1)}>
+            <ArrowDown size={22} />
+            Material down
           </button>
           <button className="secondary-button" onClick={editSelectedPart}>
             <Pencil size={22} />
-            Edit part page
+            Rename part page
+          </button>
+          <button className="secondary-button" onClick={editPartSerialRules}>
+            <Pencil size={22} />
+            Serial rules
+          </button>
+          <button className="secondary-button" onClick={() => moveSelectedPart(-1)}>
+            <ArrowUp size={22} />
+            Part up
+          </button>
+          <button className="secondary-button" onClick={() => moveSelectedPart(1)}>
+            <ArrowDown size={22} />
+            Part down
           </button>
         </div>
 
@@ -466,6 +610,14 @@ export function AdminConfigPage() {
             <button className="secondary-button" onClick={() => updateSelectedOperation((name) => window.prompt("Operation name", name))}>
               <Pencil size={22} />
               Edit operation
+            </button>
+            <button className="secondary-button" onClick={() => moveSelectedOperation(-1)}>
+              <ArrowUp size={22} />
+              Operation up
+            </button>
+            <button className="secondary-button" onClick={() => moveSelectedOperation(1)}>
+              <ArrowDown size={22} />
+              Operation down
             </button>
             <button className="secondary-button danger-button" onClick={deleteSelectedOperation}>
               <Trash2 size={22} />
@@ -547,4 +699,23 @@ function validateConfig(config: AppConfig) {
   config.frameTypes.forEach((frameType) => {
     new RegExp(frameType.serialPattern);
   });
+  config.materials.forEach((material) => {
+    material.parts.forEach((part) => {
+      part.serialPatterns?.forEach((pattern) => {
+        new RegExp(pattern);
+      });
+    });
+  });
+}
+
+function moveItem<T extends { id: string }>(items: T[], id: string, direction: -1 | 1) {
+  const index = items.findIndex((item) => item.id === id);
+  const nextIndex = index + direction;
+  if (index === -1 || nextIndex < 0 || nextIndex >= items.length) {
+    return items;
+  }
+  const nextItems = [...items];
+  const [item] = nextItems.splice(index, 1);
+  nextItems.splice(nextIndex, 0, item);
+  return nextItems;
 }
