@@ -96,7 +96,7 @@ function getImageFromRequest(request: FunctionRequest): Buffer {
   }
 
   if (ArrayBuffer.isView(body)) {
-    return Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+    return Buffer.from(body.buffer as ArrayBuffer, body.byteOffset, body.byteLength);
   }
 
   if (typeof body === "string") {
@@ -142,7 +142,7 @@ async function callAzureVision(image: Buffer): Promise<AzureReadResult> {
         "Content-Type": "application/octet-stream",
         "Ocp-Apim-Subscription-Key": key
       },
-      body: image
+      body: image as any
     }
   );
 
