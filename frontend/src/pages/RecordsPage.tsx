@@ -20,11 +20,13 @@ import { canManuallyAddSerial } from "../services/operatorService";
 import { loadOperationVisitLogs, loadOperatorSessionLogs } from "../services/sessionLogService";
 
 type RecordsView = "master" | "operations" | "rework" | "sessions" | "pageTime";
+type SearchMode = "serial" | "all" | "batch" | "operator" | "operation";
 
 export function RecordsPage() {
   const { adminUser, config, operatorId } = useAppContext();
   const [records, setRecords] = useState(loadDemoRecords());
   const [query, setQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<SearchMode>("serial");
   const [tableFilter, setTableFilter] = useState("all");
   const [view, setView] = useState<RecordsView>("master");
   const [message, setMessage] = useState("");
@@ -52,14 +54,26 @@ export function RecordsPage() {
       const tableMatches = tableFilter === "all" || record.tableName === tableFilter;
       if (!tableMatches) return false;
       if (!needle) return true;
-      return [record.serialNumber, record.linkedHingeSerial, record.batchNumber, record.part, record.material].some((value) =>
-        value.toUpperCase().includes(needle)
-      );
+      if (searchMode === "serial") {
+        return [record.serialNumber, record.linkedHingeSerial].some((value) => String(value ?? "").toUpperCase().includes(needle));
+      }
+      if (searchMode === "batch") {
+        return String(record.batchNumber ?? "").toUpperCase().includes(needle);
+      }
+      if (searchMode === "operator") {
+        return record.events.some((event) => String(event.operatorId ?? "").toUpperCase().includes(needle));
+      }
+      if (searchMode === "operation") {
+        return record.events.some((event) => String(event.operation ?? "").toUpperCase().includes(needle));
+      }
+      return [record.serialNumber, record.linkedHingeSerial, record.batchNumber, record.part, record.material, record.status].some((value) =>
+        String(value ?? "").toUpperCase().includes(needle)
+      ) || record.events.some((event) => Object.values(event).some((value) => String(value).toUpperCase().includes(needle)));
     });
-  }, [query, records, tableFilter]);
+  }, [query, records, searchMode, tableFilter]);
 
-  const filteredOperations = useMemo(() => filterRows(operationHistory, query, tableFilter), [operationHistory, query, tableFilter]);
-  const filteredRework = useMemo(() => filterRows(reworkHistory, query, tableFilter), [reworkHistory, query, tableFilter]);
+  const filteredOperations = useMemo(() => filterRows(operationHistory, query, tableFilter, searchMode), [operationHistory, query, searchMode, tableFilter]);
+  const filteredRework = useMemo(() => filterRows(reworkHistory, query, tableFilter, searchMode), [reworkHistory, query, searchMode, tableFilter]);
 
   function refreshRecords() {
     setRecords(loadDemoRecords());
@@ -139,6 +153,16 @@ export function RecordsPage() {
         <label className="field">
           <span>Search serial / hinge / operation / operator</span>
           <input value={query} onChange={(event) => setQuery(event.target.value)} autoComplete="off" />
+        </label>
+        <label className="field">
+          <span>Search mode</span>
+          <select value={searchMode} onChange={(event) => setSearchMode(event.target.value as SearchMode)}>
+            <option value="serial">Serial / hinge only</option>
+            <option value="operation">Operation</option>
+            <option value="operator">Operator</option>
+            <option value="batch">Batch</option>
+            <option value="all">All fields</option>
+          </select>
         </label>
         <label className="field">
           <span>Table</span>
@@ -286,11 +310,28 @@ function Table({ columns, children }: { columns: string[]; children: React.React
   );
 }
 
-function filterRows<T extends { tableName: string }>(rows: T[], query: string, tableFilter: string) {
+function filterRows<T extends { tableName: string; serialNumber?: string; operation?: string; sourceOperation?: string; operatorId?: string; openedBy?: string; batchNumber?: string }>(
+  rows: T[],
+  query: string,
+  tableFilter: string,
+  searchMode: SearchMode
+) {
   const needle = query.trim().toUpperCase();
   return rows.filter((row) => {
     if (tableFilter !== "all" && row.tableName !== tableFilter) return false;
     if (!needle) return true;
+    if (searchMode === "serial") {
+      return String(row.serialNumber ?? "").toUpperCase().includes(needle);
+    }
+    if (searchMode === "operation") {
+      return [row.operation, row.sourceOperation].some((value) => String(value ?? "").toUpperCase().includes(needle));
+    }
+    if (searchMode === "operator") {
+      return [row.operatorId, row.openedBy].some((value) => String(value ?? "").toUpperCase().includes(needle));
+    }
+    if (searchMode === "batch") {
+      return String(row.batchNumber ?? "").toUpperCase().includes(needle);
+    }
     return Object.values(row).some((value) => String(value).toUpperCase().includes(needle));
   });
 }

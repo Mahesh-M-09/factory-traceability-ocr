@@ -2,6 +2,7 @@ import { Camera, ChevronLeft, Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CameraCapture } from "../components/CameraCapture";
+import { OperatorShell } from "../components/OperatorShell";
 import { requestOcr } from "../services/api";
 import { findDemoRecord } from "../services/demoDatabaseService";
 import { cleanSerialNumber } from "../services/serial";
@@ -43,7 +44,7 @@ export function SearchPage() {
   }
 
   return (
-    <main className="page split-page">
+    <OperatorShell className="split-page">
       <section className="summary-panel">
         <button className="back-button" onClick={() => navigate("/materials")}>
           <ChevronLeft size={22} />
@@ -118,6 +119,6 @@ export function SearchPage() {
         )}
         {showCamera && <CameraCapture autoCaptureEnabled={false} onCapture={handleCapture} />}
       </section>
-    </main>
+    </OperatorShell>
   );
 }

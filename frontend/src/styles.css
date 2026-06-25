@@ -114,6 +114,18 @@ textarea {
   padding: 34px 28px 48px;
 }
 
+.operator-shell.device-framed {
+  max-width: min(var(--operator-width), calc(100vw - 16px));
+  min-height: var(--operator-min-height);
+  padding: 22px 16px 34px;
+}
+
+.operator-shell.compact-device.split-page,
+.operator-shell.compact-device .choice-grid,
+.operator-shell.compact-device .operation-grid {
+  grid-template-columns: 1fr;
+}
+
 .narrow-page {
   max-width: 560px;
 }
@@ -166,6 +178,18 @@ textarea {
   border-radius: 14px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
   padding: 28px;
+}
+
+.summary-panel,
+.summary-panel h1,
+.summary-panel dd,
+.summary-panel .page-heading h1 {
+  color: #151515;
+}
+
+.summary-panel .page-heading p,
+.summary-panel dt {
+  color: #5f5b55;
 }
 
 .login-panel {
@@ -509,6 +533,10 @@ textarea:focus {
 
 .warning-text {
   color: #a04a00;
+}
+
+.status-text {
+  color: #292724;
 }
 
 .error-text,
@@ -866,6 +894,29 @@ dd {
   padding: 5px;
 }
 
+.field-chip button:first-child {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.field-chip small {
+  color: #6a645e;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: none;
+}
+
+.assigned-field-label {
+  display: grid;
+  gap: 2px;
+}
+
+.assigned-field-label small {
+  color: #5f5b55;
+  font-size: 0.72rem;
+}
+
 .field-chip button {
   align-items: center;
   background: transparent;
@@ -906,6 +957,18 @@ dd {
   height: 24px;
   justify-content: center;
   width: 24px;
+}
+
+.assigned-field .neutral-chip-button {
+  background: #f4f2ef;
+  color: #151515;
+}
+
+.device-layout-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-bottom: 18px;
 }
 
 .json-editor {

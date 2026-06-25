@@ -8,6 +8,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { MaterialSelectionPage } from "./pages/MaterialSelectionPage";
 import { OperationFormPage } from "./pages/OperationFormPage";
 import { OperationSelectionPage } from "./pages/OperationSelectionPage";
+import { OcrTestPage } from "./pages/OcrTestPage";
 import { PartSelectionPage } from "./pages/PartSelectionPage";
 import { RecordsPage } from "./pages/RecordsPage";
 import { SavePage } from "./pages/SavePage";
@@ -135,6 +136,7 @@ function App() {
         <Route path="/records" element={operatorId || adminUser ? <RecordsPage /> : <Navigate to="/" />} />
         <Route path="/admin" element={<AdminConfigPage />} />
         <Route path="/admin/connections" element={<AdminConnectionsPage />} />
+        <Route path="/admin/ocr-test" element={adminUser ? <OcrTestPage /> : <Navigate to="/admin" />} />
       </Routes>
     </AppContext.Provider>
   );

@@ -1,15 +1,16 @@
-import { ArrowDown, ArrowUp, ChevronLeft, Download, Link, Pencil, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronLeft, Download, Link, Pencil, Plus, RotateCcw, Save, ScanText, Trash2, X } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
 import { storeAdminUser, validateAdminLogin } from "../services/adminAuthService";
 import { resetAppConfig, saveAppConfig } from "../services/configService";
+import { DEVICE_LAYOUT_PRESETS, loadDeviceLayout, saveDeviceLayout, type DeviceLayoutMode } from "../services/deviceLayoutService";
 import { clearOperatorId } from "../services/operatorService";
 import { endOperatorSession } from "../services/sessionLogService";
 import type { AppConfig, AppUserConfig, FieldType, OperationConfig, PartConfig } from "../types/config";
 
-type AdminTab = "route" | "serial" | "fields" | "users" | "json";
+type AdminTab = "route" | "serial" | "fields" | "users" | "device" | "json";
 
 export function AdminConfigPage() {
   const { config, setConfig, adminUser, setAdminUser, setOperatorId } = useAppContext();
@@ -22,6 +23,7 @@ export function AdminConfigPage() {
   const [adminMaterialId, setAdminMaterialId] = useState(config.materials[0]?.id ?? "");
   const [adminPartId, setAdminPartId] = useState(config.materials[0]?.parts[0]?.id ?? "");
   const [adminOperationId, setAdminOperationId] = useState(config.materials[0]?.parts[0]?.operations[0]?.id ?? "");
+  const [deviceLayout, setDeviceLayout] = useState(loadDeviceLayout());
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -204,9 +206,10 @@ export function AdminConfigPage() {
       type === "select"
         ? window.prompt("Dropdown options separated by commas", "Option 1, Option 2")?.split(",").map((option) => option.trim()).filter(Boolean)
         : undefined;
+    const defaultValue = window.prompt("Default value (optional)", options?.[0] ?? "")?.trim() || undefined;
     updateDraft({
       ...draftConfig,
-      fields: { ...draftConfig.fields, [slugify(label)]: { label, type, required, options } }
+      fields: { ...draftConfig.fields, [slugify(label)]: { label, type, required, options, defaultValue } }
     });
   }
 
@@ -222,7 +225,8 @@ export function AdminConfigPage() {
       type === "select"
         ? window.prompt("Dropdown options separated by commas", field.options?.join(", ") ?? "")?.split(",").map((option) => option.trim()).filter(Boolean)
         : undefined;
-    updateDraft({ ...draftConfig, fields: { ...draftConfig.fields, [fieldId]: { label, type, required, options } } });
+    const defaultValue = window.prompt("Default value (optional)", field.defaultValue ?? options?.[0] ?? "")?.trim() || undefined;
+    updateDraft({ ...draftConfig, fields: { ...draftConfig.fields, [fieldId]: { label, type, required, options, defaultValue } } });
   }
 
   function assignField(fieldId: string) {
@@ -233,6 +237,17 @@ export function AdminConfigPage() {
   function removeField(fieldId: string) {
     if (!adminOperation) return;
     updateOperation({ ...adminOperation, requiredFields: adminOperation.requiredFields.filter((item) => item !== fieldId) });
+  }
+
+  function moveAssignedField(fieldId: string, direction: -1 | 1) {
+    if (!adminOperation) return;
+    updateOperation({ ...adminOperation, requiredFields: moveStringItem(adminOperation.requiredFields, fieldId, direction) });
+  }
+
+  function saveDeviceLayoutSetting() {
+    saveDeviceLayout(deviceLayout);
+    setMessage("Device layout saved on this browser only. Operator screens on this device will use it.");
+    setError("");
   }
 
   function addUser() {
@@ -312,6 +327,10 @@ export function AdminConfigPage() {
             <Link size={22} />
             Connections
           </button>
+          <button className="secondary-button" onClick={() => navigate("/admin/ocr-test")}>
+            <ScanText size={22} />
+            OCR Test
+          </button>
         </div>
       </div>
 
@@ -321,6 +340,7 @@ export function AdminConfigPage() {
           ["serial", "Serial Rules"],
           ["fields", "Fields"],
           ["users", "Users"],
+          ["device", "Device Layout"],
           ["json", "JSON"]
         ].map(([id, label]) => (
           <button className={activeTab === id ? "active" : ""} key={id} onClick={() => setActiveTab(id as AdminTab)}>
@@ -329,7 +349,7 @@ export function AdminConfigPage() {
         ))}
       </nav>
 
-      {activeTab !== "users" && activeTab !== "json" && (
+      {activeTab !== "users" && activeTab !== "device" && activeTab !== "json" && (
         <section className="admin-selector-strip">
           <label className="field">
             <span>Material</span>
@@ -455,7 +475,10 @@ export function AdminConfigPage() {
             </div>
             {Object.entries(draftConfig.fields).map(([fieldId, field]) => (
               <span className="field-chip" draggable key={fieldId} onDragStart={(event) => event.dataTransfer.setData("text/plain", fieldId)}>
-                <button onClick={() => assignField(fieldId)}>{field.label}</button>
+                <button onClick={() => assignField(fieldId)}>
+                  {field.label}
+                  {field.defaultValue && <small>Default: {field.defaultValue}</small>}
+                </button>
                 <button onClick={() => editField(fieldId)} aria-label={`Edit ${field.label}`}><Pencil size={15} /></button>
               </span>
             ))}
@@ -475,13 +498,65 @@ export function AdminConfigPage() {
             <div className="assigned-fields">
               {adminOperation?.requiredFields.map((fieldId) => (
                 <span className="assigned-field" key={fieldId}>
-                  {draftConfig.fields[fieldId]?.label ?? fieldId}
+                  <span className="assigned-field-label">
+                    {draftConfig.fields[fieldId]?.label ?? fieldId}
+                    {draftConfig.fields[fieldId]?.defaultValue && <small>Default: {draftConfig.fields[fieldId]?.defaultValue}</small>}
+                  </span>
+                  <button className="neutral-chip-button" onClick={() => moveAssignedField(fieldId, -1)} aria-label={`Move ${fieldId} up`}><ArrowUp size={16} /></button>
+                  <button className="neutral-chip-button" onClick={() => moveAssignedField(fieldId, 1)} aria-label={`Move ${fieldId} down`}><ArrowDown size={16} /></button>
                   <button onClick={() => removeField(fieldId)} aria-label={`Remove ${fieldId}`}><X size={16} /></button>
                 </span>
               ))}
               {adminOperation && adminOperation.requiredFields.length === 0 && <span className="muted-text">No fields assigned</span>}
             </div>
           </div>
+        </section>
+      )}
+
+      {activeTab === "device" && (
+        <section className="admin-card device-layout-panel">
+          <h2>Device Layout</h2>
+          <p className="muted-text">Saved only on this browser/device. It applies to operator workflow pages, not Admin or Database pages.</p>
+          <div className="device-layout-grid">
+            <label className="field">
+              <span>Preset</span>
+              <select
+                value={deviceLayout.mode}
+                onChange={(event) => {
+                  const mode = event.target.value as DeviceLayoutMode;
+                  setDeviceLayout(DEVICE_LAYOUT_PRESETS[mode]);
+                }}
+              >
+                {Object.values(DEVICE_LAYOUT_PRESETS).map((preset) => (
+                  <option key={preset.mode} value={preset.mode}>{preset.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Width px</span>
+              <input
+                type="number"
+                min="320"
+                value={deviceLayout.width || ""}
+                disabled={deviceLayout.mode === "auto"}
+                onChange={(event) => setDeviceLayout({ ...deviceLayout, mode: "custom", width: Number(event.target.value) })}
+              />
+            </label>
+            <label className="field">
+              <span>Minimum height px</span>
+              <input
+                type="number"
+                min="360"
+                value={deviceLayout.minHeight || ""}
+                disabled={deviceLayout.mode === "auto"}
+                onChange={(event) => setDeviceLayout({ ...deviceLayout, mode: "custom", minHeight: Number(event.target.value) })}
+              />
+            </label>
+          </div>
+          <button className="primary-button" onClick={saveDeviceLayoutSetting}>
+            <Save size={22} />
+            Save device layout
+          </button>
         </section>
       )}
 
@@ -628,6 +703,18 @@ function validateConfig(config: AppConfig) {
 
 function moveItem<T extends { id: string }>(items: T[], id: string, direction: -1 | 1) {
   const index = items.findIndex((item) => item.id === id);
+  const nextIndex = index + direction;
+  if (index === -1 || nextIndex < 0 || nextIndex >= items.length) {
+    return items;
+  }
+  const nextItems = [...items];
+  const [item] = nextItems.splice(index, 1);
+  nextItems.splice(nextIndex, 0, item);
+  return nextItems;
+}
+
+function moveStringItem(items: string[], id: string, direction: -1 | 1) {
+  const index = items.indexOf(id);
   const nextIndex = index + direction;
   if (index === -1 || nextIndex < 0 || nextIndex >= items.length) {
     return items;

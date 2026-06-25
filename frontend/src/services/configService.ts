@@ -34,13 +34,20 @@ function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
     batchNumber: config.fields.batchNumber ?? { label: "Batch number", type: "text" as const, required: true },
     startSerial: config.fields.startSerial ?? { label: "First stamped serial", type: "text" as const, required: true },
     endSerial: config.fields.endSerial ?? { label: "Last stamped serial", type: "text" as const, required: true },
-    robotNumber: config.fields.robotNumber ?? { label: "Robot number", type: "text" as const, required: true },
-    jigUsed: config.fields.jigUsed ?? {
+    robotNumber: withFieldDefaults(config.fields.robotNumber, {
+      label: "Robot number",
+      type: "select" as const,
+      required: true,
+      options: ["01"],
+      defaultValue: "01"
+    }),
+    jigUsed: withFieldDefaults(config.fields.jigUsed, {
       label: "Jig used",
       type: "select" as const,
       required: true,
-      options: ["JIG 01", "JIG 02"]
-    },
+      options: ["JIG 01", "JIG 02"],
+      defaultValue: "JIG 01"
+    }),
     jigCapture: config.fields.jigCapture ?? { label: "Jig scan / entered", type: "text" as const, required: false },
     hingeSerial: config.fields.hingeSerial ?? { label: "MF-Hinge ID", type: "text" as const, required: true },
     passFail: config.fields.passFail ?? {
@@ -49,12 +56,13 @@ function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
       required: true,
       options: ["Pass", "Fail"]
     },
-    sendToRework: config.fields.sendToRework ?? {
+    sendToRework: withFieldDefaults(config.fields.sendToRework, {
       label: "Send to rework",
       type: "select" as const,
       required: false,
-      options: ["No", "Yes"]
-    },
+      options: ["No", "Yes"],
+      defaultValue: "No"
+    }),
     reworkReason: config.fields.reworkReason ?? {
       label: "Rework reason",
       type: "textarea" as const,
@@ -65,19 +73,21 @@ function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
       label: "Part status",
       type: "select" as const,
       required: false,
-      options: ["Active", "Hold", "Scrap"]
+      options: ["Active", "Hold", "Scrap"],
+      defaultValue: config.fields.scrapStatus?.defaultValue ?? "Active"
     },
     reworkEntry: config.fields.reworkEntry ?? {
       label: "Rework entry",
       type: "textarea" as const,
       required: false
     },
-    reworkStatus: config.fields.reworkStatus ?? {
+    reworkStatus: withFieldDefaults(config.fields.reworkStatus, {
       label: "Final rework",
       type: "select" as const,
       required: true,
-      options: ["No Rework", "Rework Required", "Reworked OK", "Scrap"]
-    }
+      options: ["No Rework", "Rework Required", "Reworked OK", "Scrap"],
+      defaultValue: "No Rework"
+    })
   };
 
   const materials = config.materials.map((material) => ({
@@ -109,6 +119,15 @@ function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
     users: ensureDefaultUsers({ ...config, materials }),
     fields,
     materials
+  };
+}
+
+function withFieldDefaults<T extends { defaultValue?: string; options?: string[] }>(field: T | undefined, defaults: T): T {
+  return {
+    ...defaults,
+    ...(field ?? {}),
+    defaultValue: field?.defaultValue ?? defaults.defaultValue,
+    options: field?.options?.length ? field.options : defaults.options
   };
 }
 

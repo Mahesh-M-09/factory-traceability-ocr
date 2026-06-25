@@ -3,7 +3,9 @@ import { ChangeEvent, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
 import { CameraCapture } from "../components/CameraCapture";
+import { OperatorShell } from "../components/OperatorShell";
 import { requestOcr } from "../services/api";
+import { findDemoRecord } from "../services/demoDatabaseService";
 import { blobToBase64 } from "../services/image";
 import { cleanSerialNumber } from "../services/serial";
 import { findOperation, findPart } from "../services/selection";
@@ -26,6 +28,9 @@ export function CapturePage() {
 
   const partPatterns = part?.serialPatterns ?? [];
   const serialIsValid = partPatterns.length ? partPatterns.some((pattern) => testPattern(pattern, serialNumber)) : Boolean(serialNumber);
+  const isStamping = operation?.name.toLowerCase().includes("stamping") ?? false;
+  const matchedRecord = serialNumber ? findDemoRecord(serialNumber) : null;
+  const recordIsKnown = isStamping || !serialNumber || Boolean(matchedRecord);
   const serialExample = part?.serialExample ?? "configured serial rule";
   const manualCorrection = Boolean(originalSerialNumber && serialNumber !== originalSerialNumber);
   const needsReview = confidence < config.ocrConfidenceThreshold || !serialIsValid || manualCorrection;
@@ -70,6 +75,10 @@ export function CapturePage() {
       setError(`Serial must match ${serialExample}.`);
       return;
     }
+    if (!recordIsKnown) {
+      setError("Record not found. Raise to a team lead to add it with investigation required.");
+      return;
+    }
 
     setCapture({
       imageBlob,
@@ -86,7 +95,7 @@ export function CapturePage() {
   }
 
   return (
-    <main className="page split-page">
+    <OperatorShell className="split-page">
       <section>
         <button className="back-button" onClick={() => navigate("/operations")}>
           <ChevronLeft size={22} />
@@ -136,6 +145,10 @@ export function CapturePage() {
           <span className={serialIsValid ? "valid-text" : "error-text"}>
             {serialIsValid ? "Format valid" : `Expected ${serialExample}`}
           </span>
+          {!isStamping && serialNumber && (
+            <span className={recordIsKnown ? "valid-text" : "error-text"}>{recordIsKnown ? "Record found" : "Record not found"}</span>
+          )}
+          {isStamping && serialNumber && <span className="status-text">Stamping creates the record</span>}
           {needsReview && <span className="warning-text">Review required</span>}
         </div>
 
@@ -146,13 +159,13 @@ export function CapturePage() {
             <RotateCcw size={22} />
             Operations
           </button>
-          <button className="primary-button" onClick={confirmCapture} disabled={!serialNumber || loading}>
+          <button className="primary-button" onClick={confirmCapture} disabled={!serialNumber || loading || !recordIsKnown}>
             <CheckCircle2 size={24} />
             Confirm serial
           </button>
         </div>
       </section>
-    </main>
+    </OperatorShell>
   );
 }
 

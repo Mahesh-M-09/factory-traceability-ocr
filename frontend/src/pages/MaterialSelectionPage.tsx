@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
+import { OperatorShell } from "../components/OperatorShell";
 import { canAccessMaterial } from "../services/operatorService";
 
 export function MaterialSelectionPage() {
@@ -10,7 +11,7 @@ export function MaterialSelectionPage() {
   const materials = config.materials.filter((material) => canAccessMaterial(operatorId, material.id, config));
 
   return (
-    <main className="page">
+    <OperatorShell>
       <div className="page-heading">
         <h1>Select Material</h1>
         <p>Choose the frame family before selecting the part.</p>
@@ -34,6 +35,6 @@ export function MaterialSelectionPage() {
           </button>
         ))}
       </section>
-    </main>
+    </OperatorShell>
   );
 }

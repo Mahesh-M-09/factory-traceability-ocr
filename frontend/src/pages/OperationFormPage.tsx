@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
 import { FieldRenderer } from "../components/FieldRenderer";
 import { CameraCapture } from "../components/CameraCapture";
+import { OperatorShell } from "../components/OperatorShell";
 import { requestOcr } from "../services/api";
 import { findDemoRecord } from "../services/demoDatabaseService";
 import { cleanSerialNumber } from "../services/serial";
@@ -42,6 +43,18 @@ export function OperationFormPage() {
       }
     };
   }, [material, operation, operatorId, part]);
+
+  useEffect(() => {
+    setFormValues((current) => {
+      const nextValues = { ...current };
+      fields.forEach(([fieldId, field]) => {
+        if ((nextValues[fieldId] === undefined || nextValues[fieldId] === "") && field.defaultValue) {
+          nextValues[fieldId] = field.defaultValue;
+        }
+      });
+      return nextValues;
+    });
+  }, [fields]);
 
   async function captureHingeSerial(blob: Blob) {
     setHingeStatus("Reading hinge serial...");
@@ -115,7 +128,7 @@ export function OperationFormPage() {
   }
 
   return (
-    <main className="page split-page">
+    <OperatorShell className="split-page">
       <section className="summary-panel">
         <button className="back-button" onClick={() => navigate(operation?.captureMode === "none" ? "/operations" : "/capture")}>
           <ChevronLeft size={22} />
@@ -190,6 +203,6 @@ export function OperationFormPage() {
           </div>
         </form>
       </section>
-    </main>
+    </OperatorShell>
   );
 }

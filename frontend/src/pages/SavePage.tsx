@@ -2,6 +2,7 @@ import { CheckCircle2, CircleAlert, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
+import { OperatorShell } from "../components/OperatorShell";
 import { saveOperation } from "../services/api";
 import { findOperation } from "../services/selection";
 
@@ -38,7 +39,7 @@ export function SavePage() {
   }
 
   return (
-    <main className="page narrow-page">
+    <OperatorShell className="narrow-page">
       <section className="save-panel">
         {status === "saving" && <Loader2 className="spin" size={54} />}
         {status === "success" && <CheckCircle2 className="success-icon" size={58} />}
@@ -76,6 +77,6 @@ export function SavePage() {
           )}
         </div>
       </section>
-    </main>
+    </OperatorShell>
   );
 }

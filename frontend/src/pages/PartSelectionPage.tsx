@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
+import { OperatorShell } from "../components/OperatorShell";
 import { canAccessPart } from "../services/operatorService";
 import { findMaterial } from "../services/selection";
 
@@ -12,7 +13,7 @@ export function PartSelectionPage() {
   const parts = material?.parts.filter((part) => canAccessPart(operatorId, selectedMaterialId, part.id, config)) ?? [];
 
   return (
-    <main className="page">
+    <OperatorShell>
       <button className="back-button" onClick={() => navigate("/materials")}>
         <ChevronLeft size={22} />
         Back
@@ -39,6 +40,6 @@ export function PartSelectionPage() {
           </button>
         ))}
       </section>
-    </main>
+    </OperatorShell>
   );
 }

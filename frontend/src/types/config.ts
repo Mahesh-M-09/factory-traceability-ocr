@@ -5,6 +5,7 @@ export interface FieldConfig {
   type: FieldType;
   required: boolean;
   options?: string[];
+  defaultValue?: string;
 }
 
 export interface FrameTypeConfig {

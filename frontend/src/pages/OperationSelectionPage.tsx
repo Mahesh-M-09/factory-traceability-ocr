@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
+import { OperatorShell } from "../components/OperatorShell";
 import { canAccessOperation } from "../services/operatorService";
 import { findMaterial, findPart } from "../services/selection";
 
@@ -14,7 +15,7 @@ export function OperationSelectionPage() {
   ) ?? [];
 
   return (
-    <main className="page">
+    <OperatorShell>
       <button className="back-button" onClick={() => navigate("/parts")}>
         <ChevronLeft size={22} />
         Back
@@ -47,6 +48,6 @@ export function OperationSelectionPage() {
           ))}
         </section>
       )}
-    </main>
+    </OperatorShell>
   );
 }
