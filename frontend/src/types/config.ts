@@ -155,3 +155,16 @@ export interface OperationVisitLog {
   exitedAt: string;
   seconds: number;
 }
+
+export interface ProductionTarget {
+  id: string;
+  date: string;
+  shift: string;
+  material: string;
+  part: string;
+  operation: string;
+  targetQty: number;
+  notes: string;
+  createdBy: string;
+  updatedAt: string;
+}

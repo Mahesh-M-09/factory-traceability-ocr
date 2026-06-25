@@ -348,6 +348,29 @@ textarea:focus {
   max-width: 190px;
 }
 
+.operation-button-with-target {
+  align-items: stretch;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.operation-button-with-target span {
+  max-width: none;
+}
+
+.operation-button-with-target small {
+  color: #5f5b55;
+  font-size: 0.8rem;
+  font-weight: 900;
+  grid-column: 1 / -1;
+  text-transform: uppercase;
+}
+
+.operation-button-with-target:hover small {
+  color: #dbe4ee;
+}
+
 .back-button {
   align-items: center;
   background: transparent;
@@ -854,11 +877,18 @@ dd {
 .operation-dropzone {
   background: #f4f2ef;
   border: 2px solid #151515;
-  display: flex;
-  flex-wrap: wrap;
   gap: 10px;
   min-height: 190px;
   padding: 18px;
+}
+
+.field-library {
+  display: grid;
+}
+
+.operation-dropzone {
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .field-library h2,
@@ -892,6 +922,44 @@ dd {
 .field-chip {
   cursor: grab;
   padding: 5px;
+}
+
+.field-chip.selected {
+  box-shadow: 0 0 0 3px rgba(232, 56, 47, 0.2);
+}
+
+.field-definition-form {
+  background: #ffffff;
+  border: 1px solid #d6d2ca;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 14px;
+}
+
+.field-definition-form .primary-button,
+.field-definition-form .checkbox-field {
+  grid-column: 1 / -1;
+}
+
+.field-definition-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.checkbox-field {
+  align-items: center;
+  color: #151515;
+  display: flex;
+  font-weight: 900;
+  gap: 10px;
+  text-transform: uppercase;
+}
+
+.checkbox-field input {
+  min-height: 18px;
+  width: 18px;
 }
 
 .field-chip button:first-child {
@@ -1094,6 +1162,147 @@ dd {
 .table-action-button:hover {
   background: #e8382f;
   color: #ffffff;
+}
+
+.target-form {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.target-form .primary-button {
+  align-self: end;
+}
+
+.dashboard-page {
+  max-width: 1600px;
+}
+
+.dashboard-heading {
+  align-items: end;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.dashboard-heading h1 {
+  font-size: clamp(2rem, 4vw, 4rem);
+  font-weight: 950;
+  line-height: 1;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.dashboard-heading p {
+  color: #a8b3c2;
+  font-weight: 750;
+  margin: 0;
+}
+
+.dashboard-date {
+  min-width: 210px;
+}
+
+.dashboard-date span {
+  color: #edf2f7;
+}
+
+.dashboard-kpis {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  margin-bottom: 18px;
+}
+
+.dashboard-kpis div {
+  background: #151515;
+  border-top: 6px solid #e8382f;
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+}
+
+.dashboard-kpis span {
+  color: #d6d2ca;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.dashboard-kpis strong {
+  color: #ffffff;
+  font-size: 2.3rem;
+  font-weight: 950;
+}
+
+.dashboard-grid-wrap {
+  background: #ffffff;
+  overflow-x: auto;
+}
+
+.dashboard-grid {
+  border-collapse: collapse;
+  min-width: 980px;
+  width: 100%;
+}
+
+.dashboard-grid th,
+.dashboard-grid td {
+  border: 1px solid #d6d2ca;
+  padding: 14px;
+  text-align: left;
+}
+
+.dashboard-grid th {
+  background: #151515;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.dashboard-grid td {
+  color: #151515;
+  font-weight: 850;
+}
+
+.metric-cell {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  min-width: 112px;
+}
+
+.metric-ring {
+  align-items: center;
+  background:
+    radial-gradient(circle, #ffffff 0 58%, transparent 60%),
+    conic-gradient(#e8382f var(--metric), #e8e2dc 0);
+  border-radius: 50%;
+  color: #151515;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 950;
+  height: 52px;
+  justify-content: center;
+  position: relative;
+  width: 52px;
+}
+
+.metric-cell.good .metric-ring {
+  background:
+    radial-gradient(circle, #ffffff 0 58%, transparent 60%),
+    conic-gradient(#1f8f4d var(--metric), #e8e2dc 0);
+}
+
+.metric-cell.warn .metric-ring {
+  background:
+    radial-gradient(circle, #ffffff 0 58%, transparent 60%),
+    conic-gradient(#d97706 var(--metric), #e8e2dc 0);
+}
+
+.metric-cell.idle .metric-ring {
+  background: #e8e2dc;
 }
 
 @keyframes spin {

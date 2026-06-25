@@ -92,11 +92,11 @@ function getImageFromRequest(request: FunctionRequest): Buffer {
   }
 
   if (body instanceof ArrayBuffer) {
-    return Buffer.from(body);
+    return Buffer.from(new Uint8Array(body));
   }
 
   if (ArrayBuffer.isView(body)) {
-    return Buffer.from(body.buffer as ArrayBuffer, body.byteOffset, body.byteLength);
+    return Buffer.from(body as NodeJS.ArrayBufferView);
   }
 
   if (typeof body === "string") {
@@ -134,6 +134,7 @@ async function callAzureVision(image: Buffer): Promise<AzureReadResult> {
     throw new Error("Azure Vision settings are missing.");
   }
 
+  const imageBody = new Blob([new Uint8Array(image)]);
   const response = await fetch(
     `${endpoint.replace(/\/$/, "")}/computervision/imageanalysis:analyze?features=read&api-version=2024-02-01`,
     {
@@ -142,7 +143,7 @@ async function callAzureVision(image: Buffer): Promise<AzureReadResult> {
         "Content-Type": "application/octet-stream",
         "Ocp-Apim-Subscription-Key": key
       },
-      body: image as any
+      body: imageBody
     }
   );
 

@@ -10,9 +10,11 @@ import { OperationFormPage } from "./pages/OperationFormPage";
 import { OperationSelectionPage } from "./pages/OperationSelectionPage";
 import { OcrTestPage } from "./pages/OcrTestPage";
 import { PartSelectionPage } from "./pages/PartSelectionPage";
+import { ProductionDashboardPage } from "./pages/ProductionDashboardPage";
 import { RecordsPage } from "./pages/RecordsPage";
 import { SavePage } from "./pages/SavePage";
 import { SearchPage } from "./pages/SearchPage";
+import { TargetsPage } from "./pages/TargetsPage";
 import { loadAppConfig } from "./services/configService";
 import { clearAdminUser, getStoredAdminUser } from "./services/adminAuthService";
 import { getStoredOperatorId } from "./services/operatorService";
@@ -134,9 +136,12 @@ function App() {
         <Route path="/save" element={operatorId && pendingRecord ? <SavePage /> : <Navigate to="/form" />} />
         <Route path="/search" element={operatorId ? <SearchPage /> : <Navigate to="/" />} />
         <Route path="/records" element={operatorId || adminUser ? <RecordsPage /> : <Navigate to="/" />} />
+        <Route path="/dashboard" element={operatorId || adminUser ? <ProductionDashboardPage /> : <Navigate to="/" />} />
+        <Route path="/dashboard/tv" element={<ProductionDashboardPage />} />
         <Route path="/admin" element={<AdminConfigPage />} />
         <Route path="/admin/connections" element={<AdminConnectionsPage />} />
         <Route path="/admin/ocr-test" element={adminUser ? <OcrTestPage /> : <Navigate to="/admin" />} />
+        <Route path="/targets" element={adminUser ? <TargetsPage /> : <Navigate to="/admin" />} />
       </Routes>
     </AppContext.Provider>
   );

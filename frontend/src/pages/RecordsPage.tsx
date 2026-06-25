@@ -55,7 +55,7 @@ export function RecordsPage() {
       if (!tableMatches) return false;
       if (!needle) return true;
       if (searchMode === "serial") {
-        return [record.serialNumber, record.linkedHingeSerial].some((value) => String(value ?? "").toUpperCase().includes(needle));
+        return [record.serialNumber, record.linkedHingeSerial].some((value) => String(value ?? "").toUpperCase() === needle);
       }
       if (searchMode === "batch") {
         return String(record.batchNumber ?? "").toUpperCase().includes(needle);
@@ -157,7 +157,7 @@ export function RecordsPage() {
         <label className="field">
           <span>Search mode</span>
           <select value={searchMode} onChange={(event) => setSearchMode(event.target.value as SearchMode)}>
-            <option value="serial">Serial / hinge only</option>
+            <option value="serial">Exact serial / hinge</option>
             <option value="operation">Operation</option>
             <option value="operator">Operator</option>
             <option value="batch">Batch</option>
@@ -321,7 +321,7 @@ function filterRows<T extends { tableName: string; serialNumber?: string; operat
     if (tableFilter !== "all" && row.tableName !== tableFilter) return false;
     if (!needle) return true;
     if (searchMode === "serial") {
-      return String(row.serialNumber ?? "").toUpperCase().includes(needle);
+      return String(row.serialNumber ?? "").toUpperCase() === needle;
     }
     if (searchMode === "operation") {
       return [row.operation, row.sourceOperation].some((value) => String(value ?? "").toUpperCase().includes(needle));

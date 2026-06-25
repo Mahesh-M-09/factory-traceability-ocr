@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChevronLeft, Download, Link, Pencil, Plus, RotateCcw, Save, ScanText, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BarChart3, ChevronLeft, ClipboardList, Download, Link, Pencil, Plus, RotateCcw, Save, ScanText, Trash2, X } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +11,9 @@ import { endOperatorSession } from "../services/sessionLogService";
 import type { AppConfig, AppUserConfig, FieldType, OperationConfig, PartConfig } from "../types/config";
 
 type AdminTab = "route" | "serial" | "fields" | "users" | "device" | "json";
+type FieldDraft = { id: string; label: string; type: FieldType; required: boolean; options: string; defaultValue: string };
+
+const EMPTY_FIELD_DRAFT: FieldDraft = { id: "", label: "", type: "text", required: false, options: "", defaultValue: "" };
 
 export function AdminConfigPage() {
   const { config, setConfig, adminUser, setAdminUser, setOperatorId } = useAppContext();
@@ -24,6 +27,8 @@ export function AdminConfigPage() {
   const [adminPartId, setAdminPartId] = useState(config.materials[0]?.parts[0]?.id ?? "");
   const [adminOperationId, setAdminOperationId] = useState(config.materials[0]?.parts[0]?.operations[0]?.id ?? "");
   const [deviceLayout, setDeviceLayout] = useState(loadDeviceLayout());
+  const [fieldDraft, setFieldDraft] = useState<FieldDraft>(EMPTY_FIELD_DRAFT);
+  const [editingFieldId, setEditingFieldId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -197,36 +202,89 @@ export function AdminConfigPage() {
   }
 
   function addFieldDefinition() {
-    const label = window.prompt("Field label, for example Jig used");
-    if (!label) return;
-    const typeAnswer = window.prompt("Field type: text, textarea, or select", "text")?.toLowerCase();
-    const type: FieldType = typeAnswer === "select" || typeAnswer === "textarea" ? typeAnswer : "text";
-    const required = window.confirm("Should this field be required?");
-    const options =
-      type === "select"
-        ? window.prompt("Dropdown options separated by commas", "Option 1, Option 2")?.split(",").map((option) => option.trim()).filter(Boolean)
-        : undefined;
-    const defaultValue = window.prompt("Default value (optional)", options?.[0] ?? "")?.trim() || undefined;
-    updateDraft({
-      ...draftConfig,
-      fields: { ...draftConfig.fields, [slugify(label)]: { label, type, required, options, defaultValue } }
-    });
+    setEditingFieldId("");
+    setFieldDraft(EMPTY_FIELD_DRAFT);
   }
 
   function editField(fieldId: string) {
     const field = draftConfig.fields[fieldId];
     if (!field) return;
-    const label = window.prompt("Field label", field.label);
-    if (!label) return;
-    const typeAnswer = window.prompt("Field type: text, textarea, or select", field.type)?.toLowerCase();
-    const type: FieldType = typeAnswer === "select" || typeAnswer === "textarea" ? typeAnswer : "text";
-    const required = window.confirm("Should this field be required?");
-    const options =
-      type === "select"
-        ? window.prompt("Dropdown options separated by commas", field.options?.join(", ") ?? "")?.split(",").map((option) => option.trim()).filter(Boolean)
-        : undefined;
-    const defaultValue = window.prompt("Default value (optional)", field.defaultValue ?? options?.[0] ?? "")?.trim() || undefined;
-    updateDraft({ ...draftConfig, fields: { ...draftConfig.fields, [fieldId]: { label, type, required, options, defaultValue } } });
+    setEditingFieldId(fieldId);
+    setFieldDraft({
+      id: fieldId,
+      label: field.label,
+      type: field.type,
+      required: field.required ?? false,
+      options: field.options?.join(", ") ?? "",
+      defaultValue: field.defaultValue ?? ""
+    });
+  }
+
+  function saveFieldDefinition(event: FormEvent) {
+    event.preventDefault();
+    const id = slugify(fieldDraft.id || fieldDraft.label);
+    const label = fieldDraft.label.trim();
+    if (!id || !label) {
+      setError("Field name and label are required.");
+      return;
+    }
+    const options = fieldDraft.type === "select" ? fieldDraft.options.split(",").map((option) => option.trim()).filter(Boolean) : undefined;
+    const nextFields = { ...draftConfig.fields };
+    if (editingFieldId && editingFieldId !== id) {
+      delete nextFields[editingFieldId];
+    }
+    nextFields[id] = {
+      label,
+      type: fieldDraft.type,
+      required: fieldDraft.required,
+      options,
+      defaultValue: fieldDraft.defaultValue.trim() || undefined
+    };
+    const renamedConfig =
+      editingFieldId && editingFieldId !== id
+        ? {
+            ...draftConfig,
+            fields: nextFields,
+            materials: draftConfig.materials.map((material) => ({
+              ...material,
+              parts: material.parts.map((part) => ({
+                ...part,
+                operations: part.operations.map((operation) => ({
+                  ...operation,
+                  requiredFields: operation.requiredFields.map((fieldId) => (fieldId === editingFieldId ? id : fieldId))
+                }))
+              }))
+            }))
+          }
+        : { ...draftConfig, fields: nextFields };
+    updateDraft(renamedConfig);
+    setEditingFieldId(id);
+    setFieldDraft({ ...fieldDraft, id });
+  }
+
+  function deleteFieldDefinition(fieldId: string) {
+    const field = draftConfig.fields[fieldId];
+    if (!field || !window.confirm(`Delete field ${field.label}? It will be removed from every operation.`)) return;
+    const nextFields = { ...draftConfig.fields };
+    delete nextFields[fieldId];
+    updateDraft({
+      ...draftConfig,
+      fields: nextFields,
+      materials: draftConfig.materials.map((material) => ({
+        ...material,
+        parts: material.parts.map((part) => ({
+          ...part,
+          operations: part.operations.map((operation) => ({
+            ...operation,
+            requiredFields: operation.requiredFields.filter((item) => item !== fieldId)
+          }))
+        }))
+      }))
+    });
+    if (editingFieldId === fieldId) {
+      setEditingFieldId("");
+      setFieldDraft(EMPTY_FIELD_DRAFT);
+    }
   }
 
   function assignField(fieldId: string) {
@@ -330,6 +388,14 @@ export function AdminConfigPage() {
           <button className="secondary-button" onClick={() => navigate("/admin/ocr-test")}>
             <ScanText size={22} />
             OCR Test
+          </button>
+          <button className="secondary-button" onClick={() => navigate("/targets")}>
+            <ClipboardList size={22} />
+            Targets
+          </button>
+          <button className="secondary-button" onClick={() => navigate("/dashboard")}>
+            <BarChart3 size={22} />
+            Dashboard
           </button>
         </div>
       </div>
@@ -473,15 +539,58 @@ export function AdminConfigPage() {
               <h2>Field Library</h2>
               <button className="secondary-button" onClick={addFieldDefinition}><Plus size={18} />Create field</button>
             </div>
-            {Object.entries(draftConfig.fields).map(([fieldId, field]) => (
-              <span className="field-chip" draggable key={fieldId} onDragStart={(event) => event.dataTransfer.setData("text/plain", fieldId)}>
-                <button onClick={() => assignField(fieldId)}>
-                  {field.label}
-                  {field.defaultValue && <small>Default: {field.defaultValue}</small>}
-                </button>
-                <button onClick={() => editField(fieldId)} aria-label={`Edit ${field.label}`}><Pencil size={15} /></button>
-              </span>
-            ))}
+            <form className="field-definition-form" onSubmit={saveFieldDefinition}>
+              <label className="field compact-field">
+                <span>Internal name</span>
+                <input value={fieldDraft.id} onChange={(event) => setFieldDraft({ ...fieldDraft, id: event.target.value })} placeholder="jigUsed" />
+              </label>
+              <label className="field compact-field">
+                <span>Display label</span>
+                <input value={fieldDraft.label} onChange={(event) => setFieldDraft({ ...fieldDraft, label: event.target.value })} placeholder="Jig used" />
+              </label>
+              <label className="field compact-field">
+                <span>Type</span>
+                <select value={fieldDraft.type} onChange={(event) => setFieldDraft({ ...fieldDraft, type: event.target.value as FieldType })}>
+                  <option value="text">Single line text</option>
+                  <option value="textarea">Multiple lines</option>
+                  <option value="select">Choice</option>
+                </select>
+              </label>
+              <label className="field compact-field">
+                <span>Choice options</span>
+                <input
+                  value={fieldDraft.options}
+                  disabled={fieldDraft.type !== "select"}
+                  onChange={(event) => setFieldDraft({ ...fieldDraft, options: event.target.value })}
+                  placeholder="JIG 01, JIG 02"
+                />
+              </label>
+              <label className="field compact-field">
+                <span>Default value</span>
+                <input
+                  value={fieldDraft.defaultValue}
+                  onChange={(event) => setFieldDraft({ ...fieldDraft, defaultValue: event.target.value })}
+                  placeholder="Optional prefill"
+                />
+              </label>
+              <label className="checkbox-field">
+                <input type="checkbox" checked={fieldDraft.required} onChange={(event) => setFieldDraft({ ...fieldDraft, required: event.target.checked })} />
+                Required field
+              </label>
+              <button className="primary-button"><Save size={18} />Save field</button>
+            </form>
+            <div className="field-definition-list">
+              {Object.entries(draftConfig.fields).map(([fieldId, field]) => (
+                <span className={`field-chip ${editingFieldId === fieldId ? "selected" : ""}`} draggable key={fieldId} onDragStart={(event) => event.dataTransfer.setData("text/plain", fieldId)}>
+                  <button onClick={() => assignField(fieldId)}>
+                    {field.label}
+                    {field.defaultValue && <small>Default: {field.defaultValue}</small>}
+                  </button>
+                  <button onClick={() => editField(fieldId)} aria-label={`Edit ${field.label}`}><Pencil size={15} /></button>
+                  <button onClick={() => deleteFieldDefinition(fieldId)} aria-label={`Delete ${field.label}`}><Trash2 size={15} /></button>
+                </span>
+              ))}
+            </div>
           </div>
           <div className="operation-dropzone" onDragOver={(event) => event.preventDefault()} onDrop={(event) => assignField(event.dataTransfer.getData("text/plain"))}>
             <h2>{adminOperation?.name ?? "Select an operation"}</h2>

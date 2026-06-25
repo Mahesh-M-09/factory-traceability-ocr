@@ -1,4 +1,4 @@
-import { Database, LogOut, Search, Settings } from "lucide-react";
+import { BarChart3, Database, LogOut, Search, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -30,6 +30,11 @@ export function Header({ operatorId, adminUser, onLogout }: HeaderProps) {
         {operatorId && (
           <Link className="icon-button" to="/search" title="Search serial" aria-label="Search serial">
             <Search size={22} />
+          </Link>
+        )}
+        {(operatorId || adminUser) && (
+          <Link className="icon-button" to="/dashboard" title="Production dashboard" aria-label="Production dashboard">
+            <BarChart3 size={22} />
           </Link>
         )}
         {(operatorId || adminUser) && (
