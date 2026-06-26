@@ -1,5 +1,5 @@
-import { ChevronLeft } from "lucide-react";
-import { type CSSProperties, useMemo, useState } from "react";
+import { ChevronLeft, Users } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getOperationHistory, getReworkHistory, loadDemoRecords } from "../services/demoDatabaseService";
 import { getTodayKey, isSameLocalDay, loadProductionTargets } from "../services/targetService";
@@ -11,12 +11,18 @@ export function ProductionDashboardPage() {
   const operations = getOperationHistory(records).filter((row) => isSameLocalDay(row.timestamp, date));
   const rework = getReworkHistory(records).filter((row) => isSameLocalDay(row.openedAt, date));
   const navigate = useNavigate();
+  const [selectedTile, setSelectedTile] = useState<{ material: string; part: string; operation: string } | null>(null);
 
   const rows = useMemo(() => {
     const partKeys = new Map<string, { material: string; part: string; operations: string[] }>();
     records.forEach((record) => {
       const key = `${record.material} / ${record.part}`;
-      partKeys.set(key, { material: record.material, part: record.part, operations: record.events.map((event) => event.operation) });
+      const existing = partKeys.get(key);
+      partKeys.set(key, {
+        material: record.material,
+        part: record.part,
+        operations: Array.from(new Set([...(existing?.operations ?? []), ...record.events.map((event) => event.operation)]))
+      });
     });
     targets.forEach((target) => {
       const key = `${target.material} / ${target.part}`;
@@ -30,10 +36,31 @@ export function ProductionDashboardPage() {
     return Array.from(partKeys.values()).sort((a, b) => `${a.material}-${a.part}`.localeCompare(`${b.material}-${b.part}`));
   }, [records, targets]);
 
-  const operationNames = Array.from(new Set([...targets.map((target) => target.operation), ...operations.map((event) => event.operation)])).sort();
   const completedCount = operations.length;
   const targetCount = targets.reduce((total, target) => total + target.targetQty, 0);
   const reworkCount = rework.length;
+  const scrapCount = records.filter((record) => record.status === "Scrap" && record.events.some((event) => isSameLocalDay(event.dateTime, date))).length;
+  const completionPercent = targetCount ? Math.min(100, Math.round((completedCount / targetCount) * 100)) : completedCount > 0 ? 100 : 0;
+  const selectedRows = selectedTile
+    ? operations.filter(
+        (event) =>
+          event.material === selectedTile.material &&
+          event.part === selectedTile.part &&
+          event.operation === selectedTile.operation
+      )
+    : [];
+  const selectedTarget = selectedTile
+    ? targets.find(
+        (target) =>
+          target.material === selectedTile.material &&
+          target.part === selectedTile.part &&
+          target.operation === selectedTile.operation
+      )?.targetQty ?? 0
+    : 0;
+  const selectedOperators = selectedRows.reduce<Record<string, number>>((summary, row) => {
+    summary[row.operatorId] = (summary[row.operatorId] ?? 0) + 1;
+    return summary;
+  }, {});
 
   return (
     <main className="page dashboard-page">
@@ -52,45 +79,83 @@ export function ProductionDashboardPage() {
         </label>
       </div>
 
-      <section className="dashboard-kpis">
-        <div><span>Target</span><strong>{targetCount}</strong></div>
-        <div><span>Completed</span><strong>{completedCount}</strong></div>
-        <div><span>Pending</span><strong>{Math.max(targetCount - completedCount, 0)}</strong></div>
-        <div><span>Rework</span><strong>{reworkCount}</strong></div>
+      <section className="dashboard-hero-progress">
+        <div>
+          <span>Overall completion</span>
+          <strong>{completionPercent}%</strong>
+          <p>{completedCount}/{targetCount || "-"} station completions · {Math.max(targetCount - completedCount, 0)} pending</p>
+        </div>
+        <div className="production-progress-track">
+          <div className="production-progress-fill" style={{ width: `${completionPercent}%` }}>
+            <span className="brazer-marker">BRAZE</span>
+          </div>
+        </div>
       </section>
 
-      <section className="dashboard-grid-wrap">
-        <table className="dashboard-grid">
-          <thead>
-            <tr>
-              <th>Part</th>
-              {operationNames.map((operation) => <th key={operation}>{operation}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={`${row.material}-${row.part}`}>
-                <td><strong>{row.material} / {row.part}</strong></td>
-                {operationNames.map((operation) => {
+      <section className="dashboard-kpis">
+        <div><span>Rework</span><strong>{reworkCount}</strong></div>
+        <div><span>Scrap</span><strong>{scrapCount}</strong></div>
+        <div><span>Active operators</span><strong>{new Set(operations.map((event) => event.operatorId)).size}</strong></div>
+        <div><span>Operation rows</span><strong>{rows.length}</strong></div>
+      </section>
+
+      <section className="dashboard-part-list">
+        {rows.map((row) => (
+          <article className="dashboard-part-row" key={`${row.material}-${row.part}`}>
+            <div className="dashboard-part-title">
+              <span>Part</span>
+              <strong>{row.material} / {row.part}</strong>
+            </div>
+            <div className="dashboard-operation-tiles">
+              {row.operations.sort().map((operation) => {
                   const done = operations.filter((event) => event.material === row.material && event.part === row.part && event.operation === operation).length;
                   const target = targets.find((item) => item.material === row.material && item.part === row.part && item.operation === operation)?.targetQty ?? 0;
                   const percent = target ? Math.min(100, Math.round((done / target) * 100)) : done > 0 ? 100 : 0;
                   const statusClass = target === 0 && done === 0 ? "idle" : done >= target && target > 0 ? "good" : percent >= 70 ? "warn" : "bad";
-                  const ringStyle = { "--metric": `${percent}%` } as CSSProperties & Record<"--metric", string>;
                   return (
-                    <td key={`${row.material}-${row.part}-${operation}`}>
-                      <div className={`metric-cell ${statusClass}`}>
-                        <div className="metric-ring" style={ringStyle}>{percent}%</div>
-                        <span>{done}/{target || "-"}</span>
-                      </div>
-                    </td>
+                    <button
+                      className={`dashboard-operation-tile ${statusClass}`}
+                      key={`${row.material}-${row.part}-${operation}`}
+                      onClick={() => setSelectedTile({ material: row.material, part: row.part, operation })}
+                    >
+                      <span>{operation}</span>
+                      <strong>{done}/{target || "-"}</strong>
+                      <small>{percent}% complete</small>
+                    </button>
                   );
                 })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </div>
+          </article>
+        ))}
       </section>
+
+      {selectedTile && (
+        <section className="dashboard-detail-panel">
+          <button className="table-action-button" onClick={() => setSelectedTile(null)}>Close</button>
+          <h2>{selectedTile.part} · {selectedTile.operation}</h2>
+          <p>{selectedRows.length}/{selectedTarget || "-"} completed on {date}</p>
+          <div className="operator-chip-list">
+            {Object.entries(selectedOperators).map(([operator, count]) => (
+              <span className="operator-chip" key={operator}><Users size={16} /> {operator}: {count}</span>
+            ))}
+            {Object.keys(selectedOperators).length === 0 && <span className="muted-text">No operator submissions yet.</span>}
+          </div>
+          <table className="records-table compact-records-table">
+            <thead><tr><th>Serial</th><th>Operator</th><th>Time</th><th>Cycle</th><th>Notes</th></tr></thead>
+            <tbody>
+              {selectedRows.map((row) => (
+                <tr key={row.id}>
+                  <td>{row.serialNumber}</td>
+                  <td>{row.operatorId}</td>
+                  <td>{new Date(row.timestamp).toLocaleTimeString()}</td>
+                  <td>{row.cycleTimeSeconds || "-"}s</td>
+                  <td>{row.notes || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
     </main>
   );
 }

@@ -11,9 +11,27 @@ import { endOperatorSession } from "../services/sessionLogService";
 import type { AppConfig, AppUserConfig, FieldType, OperationConfig, PartConfig } from "../types/config";
 
 type AdminTab = "route" | "serial" | "fields" | "users" | "device" | "json";
-type FieldDraft = { id: string; label: string; type: FieldType; required: boolean; options: string; defaultValue: string };
+type FieldDraft = {
+  id: string;
+  label: string;
+  type: FieldType;
+  required: boolean;
+  options: string;
+  defaultValue: string;
+  visibleFieldId: string;
+  visibleEquals: string;
+};
 
-const EMPTY_FIELD_DRAFT: FieldDraft = { id: "", label: "", type: "text", required: false, options: "", defaultValue: "" };
+const EMPTY_FIELD_DRAFT: FieldDraft = {
+  id: "",
+  label: "",
+  type: "text",
+  required: false,
+  options: "",
+  defaultValue: "",
+  visibleFieldId: "",
+  visibleEquals: ""
+};
 
 export function AdminConfigPage() {
   const { config, setConfig, adminUser, setAdminUser, setOperatorId } = useAppContext();
@@ -216,7 +234,9 @@ export function AdminConfigPage() {
       type: field.type,
       required: field.required ?? false,
       options: field.options?.join(", ") ?? "",
-      defaultValue: field.defaultValue ?? ""
+      defaultValue: field.defaultValue ?? "",
+      visibleFieldId: field.visibleWhen?.fieldId ?? "",
+      visibleEquals: field.visibleWhen?.equals ?? ""
     });
   }
 
@@ -238,7 +258,11 @@ export function AdminConfigPage() {
       type: fieldDraft.type,
       required: fieldDraft.required,
       options,
-      defaultValue: fieldDraft.defaultValue.trim() || undefined
+      defaultValue: fieldDraft.defaultValue.trim() || undefined,
+      visibleWhen:
+        fieldDraft.visibleFieldId && fieldDraft.visibleEquals
+          ? { fieldId: fieldDraft.visibleFieldId, equals: fieldDraft.visibleEquals }
+          : undefined
     };
     const renamedConfig =
       editingFieldId && editingFieldId !== id
@@ -524,11 +548,31 @@ export function AdminConfigPage() {
           <dl className="rule-summary">
             <div><dt>Examples</dt><dd>{adminPart?.serialExample || "No examples configured"}</dd></div>
             <div><dt>Accepted regex rules</dt><dd>{adminPart?.serialPatterns?.join(" | ") || "No serial rules configured"}</dd></div>
+            <div><dt>Rework mistake choices</dt><dd>{adminPart?.mistakeReasons?.join(" | ") || "No mistake choices configured"}</dd></div>
           </dl>
-          <button className="secondary-button" onClick={editPartSerialRules}>
-            <Pencil size={22} />
-            Edit serial rules
-          </button>
+          <div className="button-row">
+            <button className="secondary-button" onClick={editPartSerialRules}>
+              <Pencil size={22} />
+              Edit serial rules
+            </button>
+            <button
+              className="secondary-button"
+              onClick={() => {
+                if (!adminPart) return;
+                const mistakes =
+                  window.prompt("Mistake/rework choices for this part, separated by commas", adminPart.mistakeReasons?.join(", ") ?? "") ??
+                  adminPart.mistakeReasons?.join(", ") ??
+                  "";
+                updateSelectedPart({
+                  ...adminPart,
+                  mistakeReasons: mistakes.split(",").map((item) => item.trim()).filter(Boolean)
+                });
+              }}
+            >
+              <Pencil size={22} />
+              Edit mistake choices
+            </button>
+          </div>
         </section>
       )}
 
@@ -573,6 +617,24 @@ export function AdminConfigPage() {
                   placeholder="Optional prefill"
                 />
               </label>
+              <label className="field compact-field">
+                <span>Show only when field</span>
+                <select value={fieldDraft.visibleFieldId} onChange={(event) => setFieldDraft({ ...fieldDraft, visibleFieldId: event.target.value })}>
+                  <option value="">Always visible</option>
+                  {Object.entries(draftConfig.fields).map(([fieldId, field]) => (
+                    <option key={fieldId} value={fieldId}>{field.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="field compact-field">
+                <span>Equals value</span>
+                <input
+                  value={fieldDraft.visibleEquals}
+                  disabled={!fieldDraft.visibleFieldId}
+                  onChange={(event) => setFieldDraft({ ...fieldDraft, visibleEquals: event.target.value })}
+                  placeholder="Yes"
+                />
+              </label>
               <label className="checkbox-field">
                 <input type="checkbox" checked={fieldDraft.required} onChange={(event) => setFieldDraft({ ...fieldDraft, required: event.target.checked })} />
                 Required field
@@ -602,6 +664,24 @@ export function AdminConfigPage() {
               >
                 <option value="ocr">Available</option>
                 <option value="none">Not required</option>
+              </select>
+            </label>
+            <label className="field compact-field">
+              <span>After submit</span>
+              <select
+                value={adminOperation?.afterSubmit ?? "sameOperation"}
+                onChange={(event) =>
+                  adminOperation &&
+                  updateOperation({
+                    ...adminOperation,
+                    afterSubmit: event.target.value as OperationConfig["afterSubmit"]
+                  })
+                }
+              >
+                <option value="sameOperation">Stay in same operation</option>
+                <option value="operations">Go to operation menu</option>
+                <option value="parts">Go to part menu</option>
+                <option value="materials">Go to material menu</option>
               </select>
             </label>
             <div className="assigned-fields">

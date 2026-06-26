@@ -6,10 +6,12 @@ import { FieldRenderer } from "../components/FieldRenderer";
 import { CameraCapture } from "../components/CameraCapture";
 import { OperatorShell } from "../components/OperatorShell";
 import { requestOcr } from "../services/api";
-import { findDemoRecord } from "../services/demoDatabaseService";
+import { findDemoRecord, flagRecordForInvestigation, getOperationHistory, hasOperationSubmission, loadDemoRecords } from "../services/demoDatabaseService";
 import { cleanSerialNumber } from "../services/serial";
 import { findMaterial, findOperation, findPart } from "../services/selection";
 import { recordOperationVisit } from "../services/sessionLogService";
+import { getTodayKey, isSameLocalDay, loadProductionTargets } from "../services/targetService";
+import type { AppConfig, FieldConfig } from "../types/config";
 
 export function OperationFormPage() {
   const { config, operatorId, selectedMaterialId, selectedPartId, selectedOperationId, capture, setPendingRecord } =
@@ -26,9 +28,51 @@ export function OperationFormPage() {
   const visitStartedAt = useRef(new Date().toISOString());
   const hingeUploadRef = useRef<HTMLInputElement | null>(null);
 
-  const fields = useMemo(() => {
+  const targetRecord = useMemo(() => {
+    if (!capture?.serialNumber) {
+      return null;
+    }
+    return findDemoRecord(capture.serialNumber);
+  }, [capture?.serialNumber]);
+
+  const fieldEntries = useMemo(() => {
     return operation?.requiredFields.map((fieldId) => [fieldId, config.fields[fieldId]] as const).filter(([, field]) => field) ?? [];
   }, [config.fields, operation]);
+
+  const fields = useMemo(() => {
+    const isReworkOperation = operation?.name.toLowerCase().includes("rework") ?? false;
+    return fieldEntries
+      .filter(([fieldId, field]) => (isReworkOperation && fieldId.startsWith("rework")) || isFieldVisible(field, formValues))
+      .map(([fieldId, field]) => [fieldId, withDynamicFieldOptions(fieldId, field, targetRecord?.part ? findPartByName(config, targetRecord.part) : part)] as const);
+  }, [config, fieldEntries, formValues, operation, part, targetRecord]);
+
+  const stationStats = useMemo(() => {
+    if (!material || !part || !operation) {
+      return null;
+    }
+    const today = getTodayKey();
+    const operationRows = getOperationHistory(loadDemoRecords()).filter(
+      (row) => row.material === material.name && row.part === part.name && row.operation === operation.name && isSameLocalDay(row.timestamp, today)
+    );
+    const target =
+      loadProductionTargets().find(
+        (item) => item.date === today && item.material === material.name && item.part === part.name && item.operation === operation.name
+      )?.targetQty ?? 0;
+    const operatorDone = operationRows.filter((row) => row.operatorId === operatorId).length;
+    return {
+      completed: operationRows.length,
+      target,
+      pending: Math.max(target - operationRows.length, 0),
+      operatorDone
+    };
+  }, [material, operation, operatorId, part]);
+
+  const priorNotes = useMemo(() => {
+    return (targetRecord?.events ?? [])
+      .filter((event) => event.formValues.notes || event.formValues.reworkEntry)
+      .slice(-4)
+      .reverse();
+  }, [targetRecord]);
 
   useEffect(() => {
     return () => {
@@ -47,14 +91,14 @@ export function OperationFormPage() {
   useEffect(() => {
     setFormValues((current) => {
       const nextValues = { ...current };
-      fields.forEach(([fieldId, field]) => {
+      fieldEntries.forEach(([fieldId, field]) => {
         if ((nextValues[fieldId] === undefined || nextValues[fieldId] === "") && field.defaultValue) {
           nextValues[fieldId] = field.defaultValue;
         }
       });
       return nextValues;
     });
-  }, [fields]);
+  }, [fieldEntries]);
 
   async function captureHingeSerial(blob: Blob) {
     setHingeStatus("Reading hinge serial...");
@@ -98,6 +142,11 @@ export function OperationFormPage() {
       setError("Part not recognised. Raise to a team lead so they can add it with Investigation required.");
       return;
     }
+    if (!isStamping && scannedSerial && hasOperationSubmission(scannedSerial, operation.name)) {
+      flagRecordForInvestigation(scannedSerial, `Duplicate scan blocked for ${operation.name}`, operatorId);
+      setError("This part was already submitted in this operation. Team lead review required; the record has been marked for investigation.");
+      return;
+    }
 
     const hingeSerial = formValues.hingeSerial?.trim().toUpperCase() ?? "";
     const needsHingeLink = operation.requiredFields.includes("hingeSerial");
@@ -111,9 +160,9 @@ export function OperationFormPage() {
 
     setPendingRecord({
       operatorId,
-      material: material.name,
-      part: part.name,
-      tableName: `${material.name}_${part.name}`.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, ""),
+      material: targetRecord?.material ?? material.name,
+      part: targetRecord?.part ?? part.name,
+      tableName: `${targetRecord?.material ?? material.name}_${targetRecord?.part ?? part.name}`.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, ""),
       operation: operation.name,
       serialNumber: capture?.serialNumber ?? formValues.startSerial?.trim().toUpperCase() ?? "",
       linkedHingeSerial: hingeSerial,
@@ -142,7 +191,7 @@ export function OperationFormPage() {
           </div>
           <div>
             <dt>Part</dt>
-            <dd>{part?.name}</dd>
+            <dd>{targetRecord?.part ?? part?.name}</dd>
           </div>
           <div>
             <dt>Operator</dt>
@@ -159,6 +208,28 @@ export function OperationFormPage() {
             <dd>{new Date().toLocaleString()}</dd>
           </div>
         </dl>
+        {stationStats && (
+          <div className="operation-progress-card">
+            <span>Operation progress today</span>
+            <strong>{stationStats.completed}/{stationStats.target || "-"}</strong>
+            <small>{stationStats.pending} pending · you completed {stationStats.operatorDone}</small>
+          </div>
+        )}
+        {targetRecord && (
+          <div className="part-status-card">
+            <span>Record found</span>
+            <strong>{targetRecord.status}</strong>
+            <small>{targetRecord.material} / {targetRecord.part}</small>
+          </div>
+        )}
+        {priorNotes.length > 0 && (
+          <div className="past-notes-card">
+            <h2>Past notes</h2>
+            {priorNotes.map((note) => (
+              <p key={`${note.operation}-${note.dateTime}`}>{note.operation}: {note.formValues.reworkEntry || note.formValues.notes}</p>
+            ))}
+          </div>
+        )}
         {capture?.previewUrl && <img className="captured-image" src={capture.previewUrl} alt="Confirmed serial" />}
       </section>
 
@@ -205,4 +276,23 @@ export function OperationFormPage() {
       </section>
     </OperatorShell>
   );
+}
+
+function isFieldVisible(field: FieldConfig, formValues: Record<string, string>) {
+  if (!field.visibleWhen) {
+    return true;
+  }
+  return formValues[field.visibleWhen.fieldId] === field.visibleWhen.equals;
+}
+
+function withDynamicFieldOptions(fieldId: string, field: FieldConfig, part?: { mistakeReasons?: string[] } | null): FieldConfig {
+  if (fieldId !== "reworkReason") {
+    return field;
+  }
+  const reasons = part?.mistakeReasons?.length ? part.mistakeReasons : field.options ?? ["Other"];
+  return { ...field, options: Array.from(new Set([...reasons, "Other"])) };
+}
+
+function findPartByName(config: AppConfig, partName: string) {
+  return config.materials.flatMap((material) => material.parts).find((item) => item.name === partName);
 }

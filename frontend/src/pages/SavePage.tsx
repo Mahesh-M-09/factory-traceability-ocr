@@ -35,7 +35,20 @@ export function SavePage() {
     setCapture(null);
     setPendingRecord(null);
     const operation = findOperation(config, selectedMaterialId, selectedPartId, selectedOperationId);
-    navigate(operation?.captureMode === "none" ? "/form" : "/capture");
+    switch (operation?.afterSubmit ?? "sameOperation") {
+      case "materials":
+        navigate("/materials");
+        break;
+      case "parts":
+        navigate("/parts");
+        break;
+      case "operations":
+        navigate("/operations");
+        break;
+      case "sameOperation":
+      default:
+        navigate(operation?.captureMode === "none" ? "/form" : "/capture");
+    }
   }
 
   return (

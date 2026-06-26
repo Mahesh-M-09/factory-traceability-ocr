@@ -27,7 +27,8 @@ export function CapturePage() {
   const navigate = useNavigate();
 
   const partPatterns = part?.serialPatterns ?? [];
-  const serialIsValid = partPatterns.length ? partPatterns.some((pattern) => testPattern(pattern, serialNumber)) : Boolean(serialNumber);
+  const isReworkRoute = part?.name.toLowerCase() === "rework";
+  const serialIsValid = isReworkRoute ? Boolean(serialNumber) : partPatterns.length ? partPatterns.some((pattern) => testPattern(pattern, serialNumber)) : Boolean(serialNumber);
   const isStamping = operation?.name.toLowerCase().includes("stamping") ?? false;
   const matchedRecord = serialNumber ? findDemoRecord(serialNumber) : null;
   const recordIsKnown = isStamping || !serialNumber || Boolean(matchedRecord);
@@ -143,7 +144,7 @@ export function CapturePage() {
         <div className="review-meta">
           <span>Confidence: {confidenceLabel}</span>
           <span className={serialIsValid ? "valid-text" : "error-text"}>
-            {serialIsValid ? "Format valid" : `Expected ${serialExample}`}
+            {serialIsValid ? "Format valid" : isReworkRoute ? "Enter a recognised part serial" : `Expected ${serialExample}`}
           </span>
           {!isStamping && serialNumber && (
             <span className={recordIsKnown ? "valid-text" : "error-text"}>{recordIsKnown ? "Record found" : "Record not found"}</span>

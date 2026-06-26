@@ -63,52 +63,44 @@ function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
       options: ["No", "Yes"],
       defaultValue: "No"
     }),
-    reworkReason: config.fields.reworkReason ?? {
+    reworkReason: withFieldDefaults(config.fields.reworkReason, {
       label: "Rework reason",
-      type: "textarea" as const,
-      required: false
-    },
+      type: "select" as const,
+      required: false,
+      options: ["Other"],
+      defaultValue: "",
+      visibleWhen: { fieldId: "sendToRework", equals: "Yes" }
+    }),
     scrapStatus: {
       ...(config.fields.scrapStatus ?? {}),
       label: "Part status",
       type: "select" as const,
       required: false,
-      options: ["Active", "Hold", "Scrap"],
+      options: ["Active", "Rework", "Hold", "Scrap"],
       defaultValue: config.fields.scrapStatus?.defaultValue ?? "Active"
     },
-    reworkEntry: config.fields.reworkEntry ?? {
-      label: "Rework entry",
-      type: "textarea" as const,
-      required: false
-    },
-    reworkStatus: withFieldDefaults(config.fields.reworkStatus, {
-      label: "Final rework",
+    reworkAction: withFieldDefaults(config.fields.reworkAction, {
+      label: "Rework action",
       type: "select" as const,
       required: true,
-      options: ["No Rework", "Rework Required", "Reworked OK", "Scrap"],
-      defaultValue: "No Rework"
-    })
+      options: ["Return to active", "Keep in rework", "Scrap"],
+      defaultValue: "Return to active"
+    }),
+    reworkEntry: config.fields.reworkEntry ?? {
+      label: "Rework notes",
+      type: "textarea" as const,
+      required: false,
+      visibleWhen: { fieldId: "sendToRework", equals: "Yes" }
+    }
   };
 
   const materials = config.materials.map((material) => ({
       ...material,
       parts: ensureTraceabilityParts(material.id, material.parts).map((part) => {
         const partWithSerialRules = ensureSerialRules(part);
-        const hasRework = part.operations.some((operation) => operation.name.toLowerCase().includes("rework"));
-        if (hasRework) {
-          return ensureTraceabilityOperations(partWithSerialRules);
-        }
         return ensureTraceabilityOperations({
           ...partWithSerialRules,
-          operations: [
-            ...part.operations,
-            {
-              id: `${part.id}-final-rework`,
-              name: "Final Rework",
-              captureMode: "ocr" as const,
-              requiredFields: ["reworkStatus", "scrapStatus", "reworkEntry", "notes"]
-            }
-          ]
+          operations: partWithSerialRules.operations.filter((operation) => operation.name.toLowerCase() !== "final rework")
         });
       })
     }));
@@ -122,12 +114,13 @@ function ensureDefaultReworkOperations(config: AppConfig): AppConfig {
   };
 }
 
-function withFieldDefaults<T extends { defaultValue?: string; options?: string[] }>(field: T | undefined, defaults: T): T {
+function withFieldDefaults<T extends { defaultValue?: string; options?: string[]; visibleWhen?: { fieldId: string; equals: string } }>(field: T | undefined, defaults: T): T {
   return {
     ...defaults,
     ...(field ?? {}),
     defaultValue: field?.defaultValue ?? defaults.defaultValue,
-    options: field?.options?.length ? field.options : defaults.options
+    options: field?.options?.length ? field.options : defaults.options,
+    visibleWhen: field?.visibleWhen ?? defaults.visibleWhen
   };
 }
 
@@ -161,22 +154,22 @@ function ensureDefaultUsers(config: AppConfig) {
 }
 
 function ensureSerialRules(part: PartConfig): PartConfig {
-  if (part.serialPatterns?.length) {
-    return part;
-  }
-
   if (part.name.toLowerCase() === "mainframe") {
     return {
       ...part,
-      serialPatterns: ["^[0-9]{7}$", "^G[0-9]{6}$", "^T[0-9]{6}$"],
-      serialExample: "1234567, G123456, or T123456"
+      serialPatterns: part.serialPatterns?.length ? part.serialPatterns : ["^[0-9]{7}$", "^G[0-9]{6}$", "^T[0-9]{6}$"],
+      serialExample: part.serialExample ?? "1234567, G123456, or T123456",
+      mistakeReasons: part.mistakeReasons?.length
+        ? part.mistakeReasons
+        : ["Braze gap", "Jig alignment", "Stamp unclear", "Surface damage", "Wrong hinge link", "Other"]
     };
   }
 
   return {
     ...part,
-    serialPatterns: ["^[A-Z0-9]{3,12}$"],
-    serialExample: "3 to 12 letters/numbers"
+    serialPatterns: part.serialPatterns?.length ? part.serialPatterns : ["^[A-Z0-9]{3,12}$"],
+    serialExample: part.serialExample ?? "3 to 12 letters/numbers",
+    mistakeReasons: part.mistakeReasons?.length ? part.mistakeReasons : ["Stamp unclear", "Damage", "Wrong fit", "Other"]
   };
 }
 
@@ -185,19 +178,29 @@ function ensureTraceabilityParts(materialId: string, parts: PartConfig[]) {
     return parts;
   }
 
+  const nextParts = [...parts];
   const hingePartId = `${materialId}-hinge`;
-  if (parts.some((part) => part.id === hingePartId || part.name.toLowerCase() === "hinge")) {
-    return parts;
-  }
-
-  return [
-    ...parts,
-    {
+  if (!nextParts.some((part) => part.id === hingePartId || part.name.toLowerCase() === "hinge")) {
+    nextParts.push({
       id: hingePartId,
       name: "Hinge",
       operations: []
-    }
-  ];
+    });
+  }
+
+  const reworkPartId = `${materialId}-rework`;
+  if (!nextParts.some((part) => part.id === reworkPartId || part.name.toLowerCase() === "rework")) {
+    nextParts.push({
+      id: reworkPartId,
+      name: "Rework",
+      serialPatterns: ["^[A-Z0-9-]{3,16}$"],
+      serialExample: "Any recognised part serial",
+      mistakeReasons: ["Braze defect", "Jig damage", "Stamp unclear", "Alignment issue", "Other"],
+      operations: []
+    });
+  }
+
+  return nextParts;
 }
 
 function ensureTraceabilityOperations(part: PartConfig) {
@@ -214,19 +217,19 @@ function ensureTraceabilityOperations(part: PartConfig) {
         id: `${part.id}-robot-braze`,
         name: "MFFBBA Robot Braze",
         captureMode: "ocr",
-        requiredFields: ["robotNumber", "jigUsed", "sendToRework", "reworkReason", "scrapStatus", "notes"]
+        requiredFields: ["robotNumber", "jigUsed", "sendToRework", "reworkReason", "reworkEntry", "scrapStatus", "notes"]
       },
       {
         id: `${part.id}-manual-braze`,
         name: "MFFBBA Manual Braze",
         captureMode: "ocr",
-        requiredFields: ["jigUsed", "jigCapture", "sendToRework", "reworkReason", "scrapStatus", "notes"]
+        requiredFields: ["jigUsed", "jigCapture", "sendToRework", "reworkReason", "reworkEntry", "scrapStatus", "notes"]
       },
       {
         id: `${part.id}-assembly-link`,
         name: "Mainframe + MFFBBA Assembly",
         captureMode: "ocr",
-        requiredFields: ["hingeSerial", "jigUsed", "sendToRework", "reworkReason", "scrapStatus", "notes"]
+        requiredFields: ["hingeSerial", "jigUsed", "sendToRework", "reworkReason", "reworkEntry", "scrapStatus", "notes"]
       },
       {
         id: `${part.id}-akea`,
@@ -249,25 +252,30 @@ function ensureTraceabilityOperations(part: PartConfig) {
         id: `${part.id}-braze`,
         name: "Hinge Braze",
         captureMode: "ocr",
-        requiredFields: ["jigUsed", "jigCapture", "sendToRework", "reworkReason", "scrapStatus", "notes"]
-      },
-      {
-        id: `${part.id}-final-rework`,
-        name: "Final Rework",
-        captureMode: "ocr",
-        requiredFields: ["reworkStatus", "scrapStatus", "reworkEntry", "notes"]
+        requiredFields: ["jigUsed", "jigCapture", "sendToRework", "reworkReason", "reworkEntry", "scrapStatus", "notes"]
       }
     ]);
   }
 
-  return ensureOperations(part, [
-    {
-      id: `${part.id}-final-rework`,
-      name: "Final Rework",
-      captureMode: "ocr",
-      requiredFields: ["reworkStatus", "scrapStatus", "reworkEntry", "notes"]
-    }
-  ]);
+  if (name === "rework") {
+    return ensureOperations(part, [
+      {
+        id: `${part.id}-bench`,
+        name: "Rework Bench",
+        captureMode: "ocr",
+        afterSubmit: "sameOperation",
+        requiredFields: ["reworkAction", "reworkReason", "reworkEntry", "scrapStatus", "notes"]
+      }
+    ]);
+  }
+
+  return {
+    ...part,
+    operations: part.operations.map((operation) => ({
+      ...operation,
+      afterSubmit: operation.afterSubmit ?? "sameOperation"
+    }))
+  };
 }
 
 function ensureOperations(part: PartConfig, requiredOperations: OperationConfig[]) {
@@ -286,10 +294,11 @@ function ensureOperations(part: PartConfig, requiredOperations: OperationConfig[
               ...operation,
               name: requiredOperation.name,
               captureMode: requiredOperation.captureMode,
+              afterSubmit: operation.afterSubmit ?? requiredOperation.afterSubmit ?? "sameOperation",
               requiredFields: Array.from(new Set([...operation.requiredFields, ...requiredOperation.requiredFields]))
             }
           : operation
       );
-    }, part.operations)
+    }, part.operations).map((operation) => ({ ...operation, afterSubmit: operation.afterSubmit ?? "sameOperation" }))
   };
 }

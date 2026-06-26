@@ -177,13 +177,22 @@ textarea {
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 14px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  color: #151515;
   padding: 28px;
 }
 
 .summary-panel,
 .summary-panel h1,
 .summary-panel dd,
-.summary-panel .page-heading h1 {
+.summary-panel .page-heading h1,
+.review-panel,
+.review-panel h2,
+.form-panel,
+.form-panel h2,
+.login-panel,
+.login-panel h1,
+.save-panel,
+.save-panel h1 {
   color: #151515;
 }
 
@@ -933,7 +942,7 @@ dd {
   border: 1px solid #d6d2ca;
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   padding: 14px;
 }
 
@@ -1172,6 +1181,206 @@ dd {
 
 .target-form .primary-button {
   align-self: end;
+}
+
+.target-import-card,
+.target-import-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.target-import-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.file-button {
+  cursor: pointer;
+}
+
+.operation-progress-card,
+.part-status-card,
+.past-notes-card {
+  background: #151515;
+  border-left: 8px solid #e8382f;
+  color: #ffffff;
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 16px;
+}
+
+.operation-progress-card span,
+.part-status-card span,
+.past-notes-card h2 {
+  color: #d6d2ca;
+  font-size: 0.78rem;
+  font-weight: 950;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.operation-progress-card strong,
+.part-status-card strong {
+  font-size: 1.9rem;
+  font-weight: 950;
+}
+
+.operation-progress-card small,
+.part-status-card small,
+.past-notes-card p {
+  color: #edf2f7;
+  font-weight: 750;
+  margin: 0;
+}
+
+.dashboard-hero-progress {
+  background: #151515;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: grid;
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 24px;
+}
+
+.dashboard-hero-progress span,
+.dashboard-part-title span {
+  color: #d6d2ca;
+  font-size: 0.82rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.dashboard-hero-progress strong {
+  color: #ffffff;
+  display: block;
+  font-size: clamp(3rem, 7vw, 6rem);
+  font-weight: 950;
+  line-height: 0.95;
+}
+
+.dashboard-hero-progress p {
+  color: #edf2f7;
+  font-weight: 750;
+  margin: 6px 0 0;
+}
+
+.production-progress-track {
+  background: #5b1918;
+  border: 2px solid #ffffff;
+  height: 54px;
+  overflow: hidden;
+}
+
+.production-progress-fill {
+  align-items: center;
+  background: linear-gradient(90deg, #197a43, #2fb867);
+  display: flex;
+  height: 100%;
+  justify-content: flex-end;
+  min-width: 42px;
+  transition: width 240ms ease;
+}
+
+.brazer-marker {
+  background: #ffffff;
+  color: #151515 !important;
+  margin-right: 8px;
+  padding: 6px 10px;
+}
+
+.dashboard-part-list {
+  display: grid;
+  gap: 14px;
+}
+
+.dashboard-part-row {
+  background: #f5f3ef;
+  border: 1px solid #d6d2ca;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(220px, 0.26fr) 1fr;
+  padding: 18px;
+}
+
+.dashboard-part-title strong {
+  color: #151515;
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 950;
+  margin-top: 6px;
+}
+
+.dashboard-operation-tiles {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.dashboard-operation-tile {
+  background: #ffffff;
+  border: 2px solid #151515;
+  color: #151515;
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  text-align: left;
+}
+
+.dashboard-operation-tile span,
+.dashboard-operation-tile small {
+  color: #5f5b55;
+  font-weight: 900;
+}
+
+.dashboard-operation-tile strong {
+  font-size: 2rem;
+  font-weight: 950;
+}
+
+.dashboard-operation-tile.good {
+  border-color: #197a43;
+}
+
+.dashboard-operation-tile.warn {
+  border-color: #b56217;
+}
+
+.dashboard-operation-tile.bad {
+  border-color: #e8382f;
+}
+
+.dashboard-operation-tile.idle {
+  opacity: 0.72;
+}
+
+.dashboard-detail-panel {
+  background: #ffffff;
+  border: 2px solid #151515;
+  color: #151515;
+  margin-top: 18px;
+  padding: 18px;
+}
+
+.operator-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.operator-chip {
+  align-items: center;
+  background: #151515;
+  color: #ffffff;
+  display: inline-flex;
+  font-weight: 900;
+  gap: 6px;
+  padding: 8px 10px;
+}
+
+.compact-records-table {
+  min-width: 0;
 }
 
 .dashboard-page {

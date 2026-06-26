@@ -50,6 +50,34 @@ export function findDemoRecord(serialNumber: string) {
   return loadDemoRecords().find((record) => record.serialNumber.toUpperCase() === needle);
 }
 
+export function hasOperationSubmission(serialNumber: string, operation: string) {
+  const record = findDemoRecord(serialNumber);
+  return Boolean(record?.events.some((event) => event.operation.toLowerCase() === operation.toLowerCase()));
+}
+
+export function flagRecordForInvestigation(serialNumber: string, reason: string, operatorId = "") {
+  const needle = serialNumber.trim().toUpperCase();
+  const now = new Date().toISOString();
+  const records = loadDemoRecords();
+  const nextRecords = records.map((record) => {
+    if (record.serialNumber.toUpperCase() !== needle) {
+      return record;
+    }
+    return {
+      ...record,
+      requiresInvestigation: true,
+      updatedAt: now,
+      columns: {
+        ...(record.columns ?? {}),
+        InvestigationReason: reason,
+        InvestigationTime: now,
+        InvestigationRaisedBy: operatorId
+      }
+    };
+  });
+  persistDemoRecords(nextRecords);
+}
+
 export function addManualDemoRecord(input: {
   serialNumber: string;
   material: string;
@@ -285,8 +313,14 @@ function splitSerial(value: string) {
 }
 
 function resolveStatus(record: OperationRecord, currentStatus: string) {
-  if (record.formValues.scrapStatus === "Scrap" || record.formValues.reworkStatus === "Scrap") {
+  if (record.formValues.reworkAction === "Scrap" || record.formValues.scrapStatus === "Scrap" || record.formValues.reworkStatus === "Scrap") {
     return "Scrap";
+  }
+  if (record.formValues.reworkAction === "Return to active") {
+    return "Active";
+  }
+  if (record.formValues.sendToRework === "Yes" || record.formValues.reworkAction === "Keep in rework" || record.formValues.scrapStatus === "Rework") {
+    return "Rework";
   }
   if (record.formValues.scrapStatus === "Hold" || record.formValues.partStatus === "Not OK" || record.formValues.passFail === "Fail") {
     return "Hold";
@@ -299,16 +333,19 @@ export function getTableName(material: string, part: string) {
 }
 
 function buildReworkEntry(record: OperationRecord) {
-  const sendToRework = record.formValues.sendToRework === "Yes";
+  const sendToRework = record.formValues.sendToRework === "Yes" || Boolean(record.formValues.reworkAction);
   const value = record.formValues.reworkReason || record.formValues.reworkEntry || "";
   if (!sendToRework && (!value || value === "No Rework")) {
     return "";
   }
+  const action = record.formValues.reworkAction || "Open";
+  const status = action === "Return to active" ? "Closed - Active" : action === "Scrap" ? "Closed - Scrap" : "Open";
   return [
     `operation=${record.operation}`,
     `reason=${value || "Rework requested"}`,
-    `notes=${record.formValues.notes || "No notes"}`,
-    `status=Open`,
+    `notes=${record.formValues.reworkEntry || record.formValues.notes || "No notes"}`,
+    `status=${status}`,
+    `action=${action}`,
     `operator=${record.operatorId}`,
     `time=${record.dateTime}`
   ].join("; ");

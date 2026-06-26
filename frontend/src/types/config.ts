@@ -6,6 +6,10 @@ export interface FieldConfig {
   required: boolean;
   options?: string[];
   defaultValue?: string;
+  visibleWhen?: {
+    fieldId: string;
+    equals: string;
+  };
 }
 
 export interface FrameTypeConfig {
@@ -20,6 +24,7 @@ export interface OperationConfig {
   name: string;
   captureMode?: "ocr" | "none";
   requiredFields: string[];
+  afterSubmit?: "sameOperation" | "operations" | "parts" | "materials";
 }
 
 export interface PartConfig {
@@ -27,6 +32,7 @@ export interface PartConfig {
   name: string;
   serialPatterns?: string[];
   serialExample?: string;
+  mistakeReasons?: string[];
   operations: OperationConfig[];
 }
 

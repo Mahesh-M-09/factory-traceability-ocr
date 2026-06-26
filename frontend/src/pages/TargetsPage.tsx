@@ -1,8 +1,16 @@
-import { ChevronLeft, Save, Trash2 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { ChevronLeft, Save, Trash2, Upload } from "lucide-react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
-import { deleteProductionTarget, getTodayKey, loadProductionTargets, saveProductionTarget } from "../services/targetService";
+import {
+  deleteProductionTarget,
+  getDateKeysInRange,
+  getTodayKey,
+  loadProductionTargets,
+  parseProductionTargetCsv,
+  saveProductionTarget,
+  saveProductionTargets
+} from "../services/targetService";
 
 export function TargetsPage() {
   const { adminUser, config } = useAppContext();
@@ -17,6 +25,10 @@ export function TargetsPage() {
   const operation = part?.operations.find((item) => item.id === operationId) ?? part?.operations[0];
   const [targetQty, setTargetQty] = useState("50");
   const [notes, setNotes] = useState("");
+  const [csvRows, setCsvRows] = useState<ReturnType<typeof parseProductionTargetCsv>>([]);
+  const [rangeStart, setRangeStart] = useState(getTodayKey());
+  const [rangeEnd, setRangeEnd] = useState(getTodayKey());
+  const [importMessage, setImportMessage] = useState("");
   const navigate = useNavigate();
 
   const visibleTargets = useMemo(
@@ -45,6 +57,43 @@ export function TargetsPage() {
     if (!window.confirm("Delete this target?")) return;
     deleteProductionTarget(targetId);
     setTargets(loadProductionTargets());
+  }
+
+  async function loadCsv(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const rows = parseProductionTargetCsv(await file.text());
+      setCsvRows(rows);
+      setImportMessage(`${rows.length} target rows loaded. Choose date range and import.`);
+    } catch (csvError) {
+      setImportMessage(csvError instanceof Error ? csvError.message : "Unable to read target CSV.");
+    }
+    event.target.value = "";
+  }
+
+  function importTargets() {
+    const dates = getDateKeysInRange(rangeStart, rangeEnd);
+    if (!csvRows.length || !dates.length) {
+      setImportMessage("Load a CSV and choose a valid date range first.");
+      return;
+    }
+    const saved = saveProductionTargets(
+      dates.flatMap((targetDate) =>
+        csvRows.map((row) => ({
+          date: targetDate,
+          shift: row.shift,
+          material: row.material,
+          part: row.part,
+          operation: row.operation,
+          targetQty: row.targetQty,
+          notes: row.notes,
+          createdBy: adminUser || "Team Lead"
+        }))
+      )
+    );
+    setTargets(loadProductionTargets());
+    setImportMessage(`${saved.length} targets imported for ${dates.length} day${dates.length === 1 ? "" : "s"}.`);
   }
 
   return (
@@ -117,6 +166,30 @@ export function TargetsPage() {
           Save target
         </button>
       </form>
+
+      <section className="admin-card target-import-card">
+        <div>
+          <h2>Upload target CSV</h2>
+          <p className="muted-text">CSV columns: material, part, operation, targetQty, shift, notes.</p>
+        </div>
+        <div className="target-import-grid">
+          <label className="secondary-button file-button">
+            <Upload size={22} />
+            Load CSV
+            <input className="hidden-input" type="file" accept=".csv,text/csv" onChange={loadCsv} />
+          </label>
+          <label className="field">
+            <span>Apply from</span>
+            <input type="date" value={rangeStart} onChange={(event) => setRangeStart(event.target.value)} />
+          </label>
+          <label className="field">
+            <span>Apply to</span>
+            <input type="date" value={rangeEnd} onChange={(event) => setRangeEnd(event.target.value)} />
+          </label>
+          <button className="primary-button" type="button" onClick={importTargets}>Import targets</button>
+        </div>
+        {importMessage && <p className="status-message">{importMessage}</p>}
+      </section>
 
       <section className="records-table-wrap">
         <table className="records-table">
