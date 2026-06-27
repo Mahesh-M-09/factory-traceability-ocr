@@ -47,6 +47,8 @@ export function AdminConfigPage() {
   const [deviceLayout, setDeviceLayout] = useState(loadDeviceLayout());
   const [fieldDraft, setFieldDraft] = useState<FieldDraft>(EMPTY_FIELD_DRAFT);
   const [editingFieldId, setEditingFieldId] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState(config.users?.[0]?.id ?? "");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -54,6 +56,10 @@ export function AdminConfigPage() {
   const adminMaterial = draftConfig.materials.find((material) => material.id === adminMaterialId);
   const adminPart = adminMaterial?.parts.find((part) => part.id === adminPartId);
   const adminOperation = adminPart?.operations.find((operation) => operation.id === adminOperationId);
+  const visibleUsers = (draftConfig.users ?? []).filter((user) =>
+    `${user.id} ${user.name} ${user.role}`.toLowerCase().includes(userSearch.toLowerCase())
+  );
+  const selectedUser = (draftConfig.users ?? []).find((user) => user.id === selectedUserId) ?? visibleUsers[0] ?? draftConfig.users?.[0];
   const allAccess = useMemo(
     () =>
       draftConfig.materials.flatMap((material) =>
@@ -340,6 +346,7 @@ export function AdminConfigPage() {
     const role = roleAnswer === "teamLead" || roleAnswer === "admin" ? roleAnswer : "operator";
     const user: AppUserConfig = { id, name, role, access: allAccess };
     updateDraft({ ...draftConfig, employees: Array.from(new Set([...draftConfig.employees, id])), users: [...(draftConfig.users ?? []), user] });
+    setSelectedUserId(id);
   }
 
   function updateUser(user: AppUserConfig) {
@@ -348,7 +355,9 @@ export function AdminConfigPage() {
 
   function deleteUser(userId: string) {
     if (!window.confirm(`Delete user ${userId}?`)) return;
-    updateDraft({ ...draftConfig, users: (draftConfig.users ?? []).filter((user) => user.id !== userId) });
+    const users = (draftConfig.users ?? []).filter((user) => user.id !== userId);
+    updateDraft({ ...draftConfig, users });
+    setSelectedUserId(users[0]?.id ?? "");
   }
 
   function updateSelectedPart(nextPart: PartConfig) {
@@ -667,6 +676,23 @@ export function AdminConfigPage() {
               </select>
             </label>
             <label className="field compact-field">
+              <span>OCR flow</span>
+              <select
+                value={adminOperation?.captureFlow ?? "reviewThenForm"}
+                disabled={(adminOperation?.captureMode ?? "ocr") === "none"}
+                onChange={(event) =>
+                  adminOperation &&
+                  updateOperation({
+                    ...adminOperation,
+                    captureFlow: event.target.value as OperationConfig["captureFlow"]
+                  })
+                }
+              >
+                <option value="reviewThenForm">Review serial, then form</option>
+                <option value="directToForm">Auto-continue when valid</option>
+              </select>
+            </label>
+            <label className="field compact-field">
               <span>After submit</span>
               <select
                 value={adminOperation?.afterSubmit ?? "sameOperation"}
@@ -758,36 +784,67 @@ export function AdminConfigPage() {
             </div>
             <button className="secondary-button" onClick={addUser}><Plus size={18} />Create user</button>
           </div>
-          <div className="user-grid">
-            {(draftConfig.users ?? []).map((user) => (
-              <article className="user-card" key={user.id}>
-                <strong>{user.id} - {user.name}</strong>
-                <label className="field compact-field">
-                  <span>Role</span>
-                  <select value={user.role} onChange={(event) => updateUser({ ...user, role: event.target.value as AppUserConfig["role"] })}>
-                    <option value="operator">Operator</option>
-                    <option value="teamLead">Team Lead</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </label>
-                <span>{user.access.length} part access rule{user.access.length === 1 ? "" : "s"}</span>
-                <button className="secondary-button" onClick={() => updateUser({ ...user, access: allAccess })}>Give all access</button>
+          <div className="user-admin-layout">
+            <aside className="user-directory">
+              <label className="field compact-field">
+                <span>Search user</span>
+                <input value={userSearch} onChange={(event) => setUserSearch(event.target.value)} placeholder="ID, name, or role" />
+              </label>
+              <div className="user-list">
+                {visibleUsers.map((user) => (
+                  <button
+                    className={selectedUser?.id === user.id ? "selected" : ""}
+                    key={user.id}
+                    onClick={() => setSelectedUserId(user.id)}
+                  >
+                    <strong>{user.id}</strong>
+                    <span>{user.name}</span>
+                    <small>{user.role} · {user.access.length} part rule{user.access.length === 1 ? "" : "s"}</small>
+                  </button>
+                ))}
+                {visibleUsers.length === 0 && <span className="muted-text">No users match this search.</span>}
+              </div>
+            </aside>
+            {selectedUser && (
+              <article className="user-access-editor">
+                <div className="section-title-row">
+                  <div>
+                    <h3>{selectedUser.id} · {selectedUser.name}</h3>
+                    <p className="muted-text">Role controls delete/manual-add level. Access controls which operation pages appear.</p>
+                  </div>
+                  <button className="secondary-button danger-button" onClick={() => deleteUser(selectedUser.id)}><Trash2 size={18} />Delete</button>
+                </div>
+                <div className="user-profile-grid">
+                  <label className="field compact-field">
+                    <span>User name</span>
+                    <input value={selectedUser.name} onChange={(event) => updateUser({ ...selectedUser, name: event.target.value })} />
+                  </label>
+                  <label className="field compact-field">
+                    <span>Role</span>
+                    <select value={selectedUser.role} onChange={(event) => updateUser({ ...selectedUser, role: event.target.value as AppUserConfig["role"] })}>
+                      <option value="operator">Operator</option>
+                      <option value="teamLead">Team Lead</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </label>
+                  <button className="secondary-button" onClick={() => updateUser({ ...selectedUser, access: allAccess })}>Give all access</button>
+                </div>
                 <div className="access-matrix">
                   {draftConfig.materials.map((material) =>
                     material.parts.map((part) => {
-                      const access = user.access.find((item) => item.materialId === material.id && item.partId === part.id);
+                      const access = selectedUser.access.find((item) => item.materialId === material.id && item.partId === part.id);
                       const hasPartAccess = Boolean(access);
                       return (
-                        <details key={`${user.id}-${part.id}`}>
+                        <details key={`${selectedUser.id}-${part.id}`}>
                           <summary>
                             <label>
                               <input
                                 type="checkbox"
                                 checked={hasPartAccess}
                                 onChange={(event) => {
-                                  const withoutPart = user.access.filter((item) => !(item.materialId === material.id && item.partId === part.id));
+                                  const withoutPart = selectedUser.access.filter((item) => !(item.materialId === material.id && item.partId === part.id));
                                   updateUser({
-                                    ...user,
+                                    ...selectedUser,
                                     access: event.target.checked
                                       ? [...withoutPart, { materialId: material.id, partId: part.id, operationIds: part.operations.map((operation) => operation.id) }]
                                       : withoutPart
@@ -797,37 +854,38 @@ export function AdminConfigPage() {
                               {material.name} / {part.name}
                             </label>
                           </summary>
-                          {part.operations.map((operation) => (
-                            <label className="access-operation" key={operation.id}>
-                              <input
-                                type="checkbox"
-                                checked={access?.operationIds.includes(operation.id) ?? false}
-                                disabled={!hasPartAccess}
-                                onChange={(event) => {
-                                  const currentAccess = access ?? { materialId: material.id, partId: part.id, operationIds: [] };
-                                  const operationIds = event.target.checked
-                                    ? Array.from(new Set([...currentAccess.operationIds, operation.id]))
-                                    : currentAccess.operationIds.filter((id) => id !== operation.id);
-                                  updateUser({
-                                    ...user,
-                                    access: [
-                                      ...user.access.filter((item) => !(item.materialId === material.id && item.partId === part.id)),
-                                      { ...currentAccess, operationIds }
-                                    ]
-                                  });
-                                }}
-                              />
-                              {operation.name}
-                            </label>
-                          ))}
+                          <div className="access-operation-grid">
+                            {part.operations.map((operation) => (
+                              <label className="access-operation" key={operation.id}>
+                                <input
+                                  type="checkbox"
+                                  checked={access?.operationIds.includes(operation.id) ?? false}
+                                  disabled={!hasPartAccess}
+                                  onChange={(event) => {
+                                    const currentAccess = access ?? { materialId: material.id, partId: part.id, operationIds: [] };
+                                    const operationIds = event.target.checked
+                                      ? Array.from(new Set([...currentAccess.operationIds, operation.id]))
+                                      : currentAccess.operationIds.filter((id) => id !== operation.id);
+                                    updateUser({
+                                      ...selectedUser,
+                                      access: [
+                                        ...selectedUser.access.filter((item) => !(item.materialId === material.id && item.partId === part.id)),
+                                        { ...currentAccess, operationIds }
+                                      ]
+                                    });
+                                  }}
+                                />
+                                {operation.name}
+                              </label>
+                            ))}
+                          </div>
                         </details>
                       );
                     })
                   )}
                 </div>
-                <button className="secondary-button danger-button" onClick={() => deleteUser(user.id)}><Trash2 size={18} />Delete</button>
               </article>
-            ))}
+            )}
           </div>
         </section>
       )}

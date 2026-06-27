@@ -273,6 +273,7 @@ function ensureTraceabilityOperations(part: PartConfig) {
     ...part,
     operations: part.operations.map((operation) => ({
       ...operation,
+      captureFlow: operation.captureFlow ?? "reviewThenForm",
       afterSubmit: operation.afterSubmit ?? "sameOperation"
     }))
   };
@@ -294,11 +295,16 @@ function ensureOperations(part: PartConfig, requiredOperations: OperationConfig[
               ...operation,
               name: requiredOperation.name,
               captureMode: requiredOperation.captureMode,
+              captureFlow: operation.captureFlow ?? requiredOperation.captureFlow ?? "reviewThenForm",
               afterSubmit: operation.afterSubmit ?? requiredOperation.afterSubmit ?? "sameOperation",
               requiredFields: Array.from(new Set([...operation.requiredFields, ...requiredOperation.requiredFields]))
             }
           : operation
       );
-    }, part.operations).map((operation) => ({ ...operation, afterSubmit: operation.afterSubmit ?? "sameOperation" }))
+    }, part.operations).map((operation) => ({
+      ...operation,
+      captureFlow: operation.captureFlow ?? "reviewThenForm",
+      afterSubmit: operation.afterSubmit ?? "sameOperation"
+    }))
   };
 }

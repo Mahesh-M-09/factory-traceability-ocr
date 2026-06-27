@@ -7,6 +7,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'azure-function/**'
+      - '.github/workflows/main_brompton-trace-ocr-api-09.yml'
   workflow_dispatch:
 
 env:

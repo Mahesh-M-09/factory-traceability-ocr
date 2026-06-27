@@ -41,7 +41,8 @@ export function CapturePage() {
     setLoading(true);
     setError("");
     setImageBlob(blob);
-    setImagePreview(URL.createObjectURL(blob));
+    const previewUrl = URL.createObjectURL(blob);
+    setImagePreview(previewUrl);
 
     try {
       const [ocrResult, base64] = await Promise.all([requestOcr(blob), blobToBase64(blob)]);
@@ -51,6 +52,24 @@ export function CapturePage() {
       setOriginalSerialNumber(cleaned);
       setConfidence(ocrResult.confidence ?? 0);
       setRawText(ocrResult.rawText ?? []);
+      const confidenceValue = ocrResult.confidence ?? 0;
+      const isValid = isSerialValid(cleaned, partPatterns, isReworkRoute);
+      const knownRecord = isStamping || !cleaned || Boolean(findDemoRecord(cleaned));
+      const reviewRequired = confidenceValue < config.ocrConfidenceThreshold || !isValid;
+      if (operation?.captureFlow === "directToForm" && cleaned && isValid && knownRecord && !reviewRequired) {
+        setCapture({
+          imageBlob: blob,
+          imageBase64: base64,
+          previewUrl,
+          serialNumber: cleaned,
+          originalSerialNumber: cleaned,
+          confidence: confidenceValue,
+          rawText: ocrResult.rawText ?? [],
+          needsReview: false,
+          frameTypeId: part?.id ?? ""
+        });
+        navigate("/form");
+      }
     } catch (ocrError) {
       setError(ocrError instanceof Error ? ocrError.message : "OCR failed.");
       setImageBase64(await blobToBase64(blob));
@@ -176,4 +195,11 @@ function testPattern(pattern: string, value: string) {
   } catch {
     return false;
   }
+}
+
+function isSerialValid(value: string, patterns: string[], isReworkRoute: boolean) {
+  if (isReworkRoute) {
+    return Boolean(value);
+  }
+  return patterns.length ? patterns.some((pattern) => testPattern(pattern, value)) : Boolean(value);
 }

@@ -640,13 +640,14 @@ dd {
 }
 
 .admin-tabs button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
   color: #ffffff;
   cursor: pointer;
   font-weight: 950;
   min-height: 48px;
-  padding: 10px 18px;
+  padding: 10px 20px;
   text-transform: uppercase;
 }
 
@@ -659,8 +660,9 @@ dd {
 .admin-card,
 .admin-list-card {
   background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 22px;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.18);
   color: #151515;
   margin-bottom: 18px;
   padding: 18px;
@@ -706,9 +708,11 @@ dd {
 
 .admin-mini-actions button {
   align-items: center;
-  background: #ffffff;
-  border: 1px solid #151515;
-  color: #151515;
+  background: #151515;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  color: #ffffff;
   cursor: pointer;
   display: inline-flex;
   font-weight: 900;
@@ -719,7 +723,8 @@ dd {
 }
 
 .admin-mini-actions .danger-mini {
-  border-color: #e8382f;
+  background: #fff1f0;
+  box-shadow: inset 0 0 0 1px #e8382f;
   color: #e8382f;
 }
 
@@ -729,8 +734,9 @@ dd {
 }
 
 .admin-sequence-list button {
-  background: #f4f2ef;
-  border: 1px solid #d6d2ca;
+  background: #f7f7f5;
+  border: 1px solid #e0ddd7;
+  border-radius: 16px;
   color: #151515;
   cursor: pointer;
   font-weight: 900;
@@ -782,6 +788,60 @@ dd {
   margin-top: 16px;
 }
 
+.user-admin-layout {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(240px, 0.34fr) minmax(420px, 1fr);
+  margin-top: 16px;
+}
+
+.user-directory,
+.user-access-editor {
+  background: #f7f7f5;
+  border: 1px solid #e0ddd7;
+  border-radius: 20px;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.user-list {
+  display: grid;
+  gap: 8px;
+  max-height: 620px;
+  overflow: auto;
+}
+
+.user-list button {
+  background: #ffffff;
+  border: 1px solid #dedbd4;
+  border-radius: 16px;
+  color: #151515;
+  cursor: pointer;
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  text-align: left;
+}
+
+.user-list button.selected {
+  background: #151515;
+  border-color: #151515;
+  color: #ffffff;
+}
+
+.user-list small,
+.user-list span {
+  font-weight: 800;
+}
+
+.user-profile-grid {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
 .user-card {
   background: #f4f2ef;
   border: 1px solid #d6d2ca;
@@ -814,6 +874,13 @@ dd {
 
 .access-operation {
   margin: 8px 0 0 22px;
+}
+
+.access-operation-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 10px;
 }
 
 .connections-grid {
@@ -884,8 +951,9 @@ dd {
 
 .field-library,
 .operation-dropzone {
-  background: #f4f2ef;
-  border: 2px solid #151515;
+  background: #f7f7f5;
+  border: 1px solid #e0ddd7;
+  border-radius: 20px;
   gap: 10px;
   min-height: 190px;
   padding: 18px;
@@ -940,6 +1008,7 @@ dd {
 .field-definition-form {
   background: #ffffff;
   border: 1px solid #d6d2ca;
+  border-radius: 18px;
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -1234,8 +1303,12 @@ dd {
 }
 
 .dashboard-hero-progress {
-  background: #151515;
+  background:
+    linear-gradient(135deg, rgba(232, 56, 47, 0.2), transparent 34%),
+    #151515;
   border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
   display: grid;
   gap: 18px;
   margin-bottom: 18px;
@@ -1296,6 +1369,8 @@ dd {
 .dashboard-part-row {
   background: #f5f3ef;
   border: 1px solid #d6d2ca;
+  border-radius: 20px;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.14);
   display: grid;
   gap: 16px;
   grid-template-columns: minmax(220px, 0.26fr) 1fr;
@@ -1318,11 +1393,13 @@ dd {
 
 .dashboard-operation-tile {
   background: #ffffff;
-  border: 2px solid #151515;
+  border: 1px solid #d8d5ce;
+  border-radius: 18px;
   color: #151515;
   cursor: pointer;
-  display: grid;
+  display: flex;
   gap: 8px;
+  align-items: center;
   padding: 16px;
   text-align: left;
 }
@@ -1334,8 +1411,43 @@ dd {
 }
 
 .dashboard-operation-tile strong {
-  font-size: 2rem;
+  font-size: 1.3rem;
   font-weight: 950;
+}
+
+.station-dial {
+  align-items: center;
+  aspect-ratio: 1;
+  background:
+    conic-gradient(#197a43 var(--progress), #e5e1da 0deg),
+    #ffffff;
+  border-radius: 50%;
+  color: #151515 !important;
+  display: grid;
+  flex: 0 0 76px;
+  justify-items: center;
+  padding: 8px;
+  position: relative;
+}
+
+.station-dial::after {
+  background: #ffffff;
+  border-radius: 50%;
+  content: "";
+  inset: 8px;
+  position: absolute;
+}
+
+.station-dial strong,
+.station-dial small {
+  color: #151515 !important;
+  position: relative;
+  z-index: 1;
+}
+
+.station-tile-copy {
+  display: grid;
+  gap: 4px;
 }
 
 .dashboard-operation-tile.good {
@@ -1356,7 +1468,8 @@ dd {
 
 .dashboard-detail-panel {
   background: #ffffff;
-  border: 2px solid #151515;
+  border: 1px solid #d8d5ce;
+  border-radius: 22px;
   color: #151515;
   margin-top: 18px;
   padding: 18px;
@@ -1367,6 +1480,43 @@ dd {
   flex-wrap: wrap;
   gap: 8px;
   margin: 12px 0;
+}
+
+.operator-summary-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  margin-top: 14px;
+}
+
+.operator-summary-card {
+  background: #f7f7f5;
+  border: 1px solid #dedbd4;
+  border-radius: 18px;
+  color: #151515;
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+}
+
+.operator-summary-card span {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 950;
+  gap: 6px;
+  text-transform: uppercase;
+}
+
+.operator-summary-card strong {
+  font-size: 2.4rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.operator-summary-card small {
+  color: #5f5b55;
+  font-weight: 800;
 }
 
 .operator-chip {

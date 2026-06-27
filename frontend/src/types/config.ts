@@ -23,6 +23,7 @@ export interface OperationConfig {
   id: string;
   name: string;
   captureMode?: "ocr" | "none";
+  captureFlow?: "reviewThenForm" | "directToForm";
   requiredFields: string[];
   afterSubmit?: "sameOperation" | "operations" | "parts" | "materials";
 }

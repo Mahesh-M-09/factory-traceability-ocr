@@ -1,12 +1,14 @@
 {
   "adminPassword": "change-me",
-  "adminCredentials": {
-    "username": "Mahesh.CH",
-    "password": "Brompton1234"
-  },
   "autoCaptureEnabled": false,
   "ocrConfidenceThreshold": 0.86,
-  "employees": ["1234", "2345", "3456", "4567"],
+  "employees": [
+    "1234",
+    "2345",
+    "3456",
+    "4567",
+    "1081"
+  ],
   "allowedCharacters": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
   "frameTypes": [
     {
@@ -30,82 +32,145 @@
         {
           "id": "steel-mainframe",
           "name": "Mainframe",
-          "serialPatterns": ["^[0-9]{7}$", "^G[0-9]{6}$", "^T[0-9]{6}$"],
-          "serialExample": "1234567, G123456, or T123456",
           "operations": [
             {
               "id": "steel-mainframe-stamping",
               "name": "Stamping",
               "captureMode": "none",
-              "requiredFields": ["startSerial", "endSerial", "notes"]
+              "requiredFields": [
+                "startSerial",
+                "endSerial",
+                "batchNumber",
+                "part-status",
+                "notes"
+              ]
             },
             {
               "id": "steel-mainframe-robot-braze",
-              "name": "Robot Braze",
+              "name": "MFFBBA Robot Braze",
               "captureMode": "ocr",
-              "requiredFields": ["jigUsed", "notes"]
+              "requiredFields": [
+                "jigused",
+                "notes",
+                "robotNumber"
+              ]
+            },
+            {
+              "id": "steel-mainframe-manual-braze",
+              "name": "MFFBBA Manual Braze",
+              "captureMode": "ocr",
+              "requiredFields": [
+                "jig-id",
+                "sendToRework",
+                "notes"
+              ]
+            },
+            {
+              "id": "steel-mainframe-assembly-link",
+              "name": "Mainframe + MFFBBA Assembly",
+              "captureMode": "ocr",
+              "requiredFields": [
+                "jig-id",
+                "sendToRework",
+                "reworkReason"
+              ]
             },
             {
               "id": "steel-mainframe-akea",
-              "name": "Akea",
+              "name": "AKEA",
               "captureMode": "ocr",
-              "requiredFields": ["partStatus", "notes"]
-            },
-            {
-              "id": "steel-mainframe-final-rework",
-              "name": "Final Rework",
-              "captureMode": "ocr",
-              "requiredFields": ["reworkStatus", "notes"]
+              "requiredFields": [
+                "passFail",
+                "sendToRework",
+                "reworkReason"
+              ]
             }
-          ]
+          ],
+          "serialPatterns": [
+            "^[0-9]{7}$",
+            "^G[0-9]{6}$",
+            "^T[0-9]{6}$"
+          ],
+          "serialExample": "1234567, G123456, or T123456"
         },
         {
           "id": "steel-front-frame",
           "name": "Front Frame",
           "operations": [
             {
-              "id": "steel-front-frame-final-rework",
-              "name": "Final Rework",
-              "captureMode": "ocr",
-              "requiredFields": ["reworkStatus", "notes"]
+              "id": "steel-front-frame-robot-braze",
+              "name": "Robot Braze",
+              "captureMode": "none",
+              "requiredFields": [
+                "jigused"
+              ]
             }
-          ]
+          ],
+          "serialPatterns": [
+            "^[A-Z0-9]{3,12}$"
+          ],
+          "serialExample": "3 to 12 letters/numbers"
         },
         {
           "id": "steel-rear-frame",
           "name": "Rear Frame",
-          "operations": [
-            {
-              "id": "steel-rear-frame-final-rework",
-              "name": "Final Rework",
-              "captureMode": "ocr",
-              "requiredFields": ["reworkStatus", "notes"]
-            }
-          ]
+          "operations": [],
+          "serialPatterns": [
+            "^[A-Z0-9]{3,12}$"
+          ],
+          "serialExample": "3 to 12 letters/numbers"
         },
         {
           "id": "steel-hbs",
           "name": "HBS",
-          "operations": [
-            {
-              "id": "steel-hbs-final-rework",
-              "name": "Final Rework",
-              "captureMode": "ocr",
-              "requiredFields": ["reworkStatus", "notes"]
-            }
-          ]
+          "operations": [],
+          "serialPatterns": [
+            "^[A-Z0-9]{3,12}$"
+          ],
+          "serialExample": "3 to 12 letters/numbers"
         },
         {
           "id": "steel-hbp",
           "name": "HBP",
+          "operations": [],
+          "serialPatterns": [
+            "^[A-Z0-9]{3,12}$"
+          ],
+          "serialExample": "3 to 12 letters/numbers"
+        },
+        {
+          "id": "steel-hinge",
+          "name": "AutoBraze",
           "operations": [
             {
-              "id": "steel-hbp-final-rework",
-              "name": "Final Rework",
+              "id": "steel-hinge-stamping",
+              "name": "Hinge Laser etch",
+              "captureMode": "none",
+              "requiredFields": [
+                "batchNumber",
+                "startSerial",
+                "endSerial",
+                "part-status",
+                "notes"
+              ]
+            },
+            {
+              "id": "steel-hinge-braze",
+              "name": "AB01",
               "captureMode": "ocr",
-              "requiredFields": ["reworkStatus", "notes"]
+              "requiredFields": [
+                "jigused",
+                "sendToRework",
+                "reworkReason",
+                "part-status",
+                "notes"
+              ]
             }
-          ]
+          ],
+          "serialPatterns": [
+            "^[A-Z0-9]{3,12}$"
+          ],
+          "serialExample": "3 to 12 letters/numbers"
         }
       ]
     },
@@ -116,52 +181,121 @@
         {
           "id": "titanium-mainframe",
           "name": "Mainframe",
-          "serialPatterns": ["^[0-9]{7}$", "^G[0-9]{6}$", "^T[0-9]{6}$"],
-          "serialExample": "1234567, G123456, or T123456",
           "operations": [
             {
-              "id": "titanium-mainframe-final-rework",
-              "name": "Final Rework",
+              "id": "titanium-mainframe-stamping",
+              "name": "Stamping",
+              "captureMode": "none",
+              "requiredFields": [
+                "batchNumber",
+                "startSerial",
+                "endSerial",
+                "part-status",
+                "notes"
+              ]
+            },
+            {
+              "id": "titanium-mainframe-manual-braze",
+              "name": "MFBBA",
               "captureMode": "ocr",
-              "requiredFields": ["reworkStatus", "notes"]
+              "requiredFields": [
+                "jigused",
+                "sendToRework",
+                "reworkReason",
+                "part-status",
+                "notes"
+              ]
+            },
+            {
+              "id": "titanium-mainframe-assembly-link",
+              "name": "Mainframe + MFBBA Assembly",
+              "captureMode": "ocr",
+              "requiredFields": [
+                "jigused",
+                "sendToRework",
+                "reworkReason",
+                "part-status",
+                "notes"
+              ]
             }
-          ]
+          ],
+          "serialPatterns": [
+            "^[0-9]{7}$",
+            "^G[0-9]{6}$",
+            "^T[0-9]{6}$"
+          ],
+          "serialExample": "1234567, G123456, or T123456"
         },
         {
           "id": "titanium-front-frame",
           "name": "Front Frame",
-          "operations": [
-            {
-              "id": "titanium-front-frame-final-rework",
-              "name": "Final Rework",
-              "captureMode": "ocr",
-              "requiredFields": ["reworkStatus", "notes"]
-            }
-          ]
+          "operations": [],
+          "serialPatterns": [
+            "^[A-Z0-9]{3,12}$"
+          ],
+          "serialExample": "3 to 12 letters/numbers"
         },
         {
           "id": "titanium-rear-frame",
           "name": "Rear Frame",
-          "operations": [
-            {
-              "id": "titanium-rear-frame-final-rework",
-              "name": "Final Rework",
-              "captureMode": "ocr",
-              "requiredFields": ["reworkStatus", "notes"]
-            }
-          ]
+          "operations": [],
+          "serialPatterns": [
+            "^[A-Z0-9]{3,12}$"
+          ],
+          "serialExample": "3 to 12 letters/numbers"
         },
         {
           "id": "titanium-hbs",
           "name": "HBS",
+          "operations": [],
+          "serialPatterns": [
+            "^[A-Z0-9]{3,12}$"
+          ],
+          "serialExample": "3 to 12 letters/numbers"
+        },
+        {
+          "id": "titanium-hinge",
+          "name": "Hinge",
           "operations": [
             {
-              "id": "titanium-hbs-final-rework",
+              "id": "titanium-hinge-final-rework",
               "name": "Final Rework",
               "captureMode": "ocr",
-              "requiredFields": ["reworkStatus", "notes"]
+              "requiredFields": [
+                "part-status",
+                "reworkEntry",
+                "notes"
+              ]
+            },
+            {
+              "id": "titanium-hinge-stamping",
+              "name": "Hinge Stamping",
+              "captureMode": "none",
+              "requiredFields": [
+                "batchNumber",
+                "startSerial",
+                "endSerial",
+                "part-status",
+                "notes"
+              ]
+            },
+            {
+              "id": "titanium-hinge-braze",
+              "name": "Hinge Braze",
+              "captureMode": "ocr",
+              "requiredFields": [
+                "jigused",
+                "sendToRework",
+                "reworkReason",
+                "part-status",
+                "notes"
+              ]
             }
-          ]
+          ],
+          "serialPatterns": [
+            "^[A-Z0-9]{3,12}$"
+          ],
+          "serialExample": "3 to 12 letters/numbers"
         }
       ]
     }
@@ -170,66 +304,443 @@
     {
       "id": "mf-stamping",
       "name": "MF Stamping",
-      "requiredFields": ["batchNumber", "fromSerial", "toSerial", "jigUsed", "notes"]
+      "requiredFields": [
+        "batchNumber",
+        "fromSerial",
+        "toSerial",
+        "jigUsed",
+        "notes"
+      ]
     },
     {
       "id": "robot-braze",
       "name": "Robot Braze",
-      "requiredFields": ["batchNumber", "jigUsed", "robotUsed", "notes"]
+      "requiredFields": [
+        "batchNumber",
+        "jigUsed",
+        "robotUsed",
+        "notes"
+      ]
     },
     {
       "id": "ales",
       "name": "Ales",
-      "requiredFields": ["batchNumber", "jigUsed", "notes"]
+      "requiredFields": [
+        "batchNumber",
+        "jigUsed",
+        "notes"
+      ]
     },
     {
       "id": "paint",
       "name": "Paint",
-      "requiredFields": ["batchNumber", "paintStatus", "notes"]
+      "requiredFields": [
+        "batchNumber",
+        "paintStatus",
+        "notes"
+      ]
     },
     {
       "id": "final-inspection",
       "name": "Final Inspection",
-      "requiredFields": ["batchNumber", "paintStatus", "notes"]
+      "requiredFields": [
+        "batchNumber",
+        "paintStatus",
+        "notes"
+      ]
     }
   ],
   "fields": {
-    "startSerial": { "label": "First stamped serial", "type": "text", "required": true },
-    "endSerial": { "label": "Last stamped serial", "type": "text", "required": true },
-    "batchNumber": { "label": "Batch number", "type": "text", "required": true },
-    "fromSerial": { "label": "From serial", "type": "text", "required": false },
-    "toSerial": { "label": "To serial", "type": "text", "required": false },
-    "jigUsed": {
-      "label": "Jig used",
-      "type": "select",
-      "required": true,
-      "options": ["JIG 01", "JIG 02"]
+    "startSerial": {
+      "label": "First stamped serial",
+      "type": "text",
+      "required": true
     },
-    "robotUsed": { "label": "Robot used", "type": "text", "required": false },
-    "paintStatus": {
-      "label": "Paint status",
-      "type": "select",
-      "required": false,
-      "options": ["Pass", "Rework", "Hold"]
+    "endSerial": {
+      "label": "Last stamped serial",
+      "type": "text",
+      "required": true
+    },
+    "batchNumber": {
+      "label": "Batch number",
+      "type": "text",
+      "required": true
     },
     "partStatus": {
       "label": "Part status",
       "type": "select",
       "required": true,
-      "options": ["OK", "Not OK"]
+      "options": [
+        "OK",
+        "Not OK"
+      ]
     },
-    "scrapStatus": {
-      "label": "Scrap decision",
-      "type": "select",
-      "required": false,
-      "options": ["Continue", "Scrap"]
+    "notes": {
+      "label": "Notes",
+      "type": "textarea",
+      "required": false
     },
-    "reworkStatus": {
-      "label": "Final rework",
+    "robotNumber": {
+      "label": "Robot number",
+      "type": "text",
+      "required": true,
+      "options": [
+        "01"
+      ],
+      "defaultValue": "01"
+    },
+    "passFail": {
+      "label": "Pass / fail",
       "type": "select",
       "required": true,
-      "options": ["No Rework", "Rework Required", "Reworked OK", "Scrap"]
+      "options": [
+        "Pass",
+        "Fail"
+      ]
     },
-    "notes": { "label": "Notes", "type": "textarea", "required": false }
-  }
+    "sendToRework": {
+      "label": "Send to rework",
+      "type": "select",
+      "required": false,
+      "options": [
+        "No",
+        "Yes"
+      ],
+      "defaultValue": "No"
+    },
+    "reworkReason": {
+      "label": "Rework reason",
+      "type": "textarea",
+      "required": false
+    },
+    "reworkEntry": {
+      "label": "Rework entry",
+      "type": "textarea",
+      "required": false
+    },
+    "jigused": {
+      "label": "Jig used",
+      "type": "text",
+      "required": true
+    },
+    "jig-id": {
+      "label": "Enter JIG ID",
+      "type": "text",
+      "required": true
+    },
+    "part-status": {
+      "label": "Part status",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Active",
+        "In Rework",
+        "Scrap"
+      ],
+      "defaultValue": "Active"
+    }
+  },
+  "adminCredentials": {
+    "username": "Mahesh.CH",
+    "password": "Brompton1234"
+  },
+  "users": [
+    {
+      "id": "1201",
+      "name": "Mahesh",
+      "role": "operator",
+      "access": [
+        {
+          "materialId": "steel",
+          "partId": "steel-mainframe",
+          "operationIds": [
+            "steel-mainframe-stamping",
+            "steel-mainframe-robot-braze",
+            "steel-mainframe-akea",
+            "steel-mainframe-final-rework",
+            "steel-mainframe-manual-braze",
+            "steel-mainframe-assembly-link"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-front-frame",
+          "operationIds": [
+            "steel-front-frame-robot-braze",
+            "steel-front-frame-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-rear-frame",
+          "operationIds": [
+            "steel-rear-frame-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-hbs",
+          "operationIds": [
+            "steel-hbs-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-hbp",
+          "operationIds": [
+            "steel-hbp-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-hinge",
+          "operationIds": [
+            "steel-hinge-final-rework",
+            "steel-hinge-stamping",
+            "steel-hinge-braze"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-mainframe",
+          "operationIds": [
+            "titanium-mainframe-final-rework",
+            "titanium-mainframe-stamping",
+            "titanium-mainframe-robot-braze",
+            "titanium-mainframe-manual-braze",
+            "titanium-mainframe-assembly-link",
+            "titanium-mainframe-akea"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-front-frame",
+          "operationIds": [
+            "titanium-front-frame-final-rework"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-rear-frame",
+          "operationIds": [
+            "titanium-rear-frame-final-rework"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-hbs",
+          "operationIds": [
+            "titanium-hbs-final-rework"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-hinge",
+          "operationIds": [
+            "titanium-hinge-final-rework",
+            "titanium-hinge-stamping",
+            "titanium-hinge-braze"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9001",
+      "name": "Team Lead",
+      "role": "teamLead",
+      "access": [
+        {
+          "materialId": "steel",
+          "partId": "steel-mainframe",
+          "operationIds": [
+            "steel-mainframe-stamping",
+            "steel-mainframe-robot-braze",
+            "steel-mainframe-akea",
+            "steel-mainframe-final-rework",
+            "steel-mainframe-manual-braze",
+            "steel-mainframe-assembly-link"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-front-frame",
+          "operationIds": [
+            "steel-front-frame-robot-braze",
+            "steel-front-frame-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-rear-frame",
+          "operationIds": [
+            "steel-rear-frame-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-hbs",
+          "operationIds": [
+            "steel-hbs-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-hbp",
+          "operationIds": [
+            "steel-hbp-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-hinge",
+          "operationIds": [
+            "steel-hinge-final-rework",
+            "steel-hinge-stamping",
+            "steel-hinge-braze"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-mainframe",
+          "operationIds": [
+            "titanium-mainframe-final-rework",
+            "titanium-mainframe-stamping",
+            "titanium-mainframe-robot-braze",
+            "titanium-mainframe-manual-braze",
+            "titanium-mainframe-assembly-link",
+            "titanium-mainframe-akea"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-front-frame",
+          "operationIds": [
+            "titanium-front-frame-final-rework"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-rear-frame",
+          "operationIds": [
+            "titanium-rear-frame-final-rework"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-hbs",
+          "operationIds": [
+            "titanium-hbs-final-rework"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-hinge",
+          "operationIds": [
+            "titanium-hinge-final-rework",
+            "titanium-hinge-stamping",
+            "titanium-hinge-braze"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1081",
+      "name": "AJ",
+      "role": "admin",
+      "access": [
+        {
+          "materialId": "steel",
+          "partId": "steel-mainframe",
+          "operationIds": [
+            "steel-mainframe-stamping",
+            "steel-mainframe-robot-braze",
+            "steel-mainframe-manual-braze",
+            "steel-mainframe-assembly-link",
+            "steel-mainframe-akea",
+            "steel-mainframe-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-front-frame",
+          "operationIds": [
+            "steel-front-frame-robot-braze",
+            "steel-front-frame-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-rear-frame",
+          "operationIds": [
+            "steel-rear-frame-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-hbs",
+          "operationIds": [
+            "steel-hbs-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-hbp",
+          "operationIds": [
+            "steel-hbp-final-rework"
+          ]
+        },
+        {
+          "materialId": "steel",
+          "partId": "steel-hinge",
+          "operationIds": [
+            "steel-hinge-final-rework",
+            "steel-hinge-stamping",
+            "steel-hinge-braze"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-mainframe",
+          "operationIds": [
+            "titanium-mainframe-final-rework",
+            "titanium-mainframe-stamping",
+            "titanium-mainframe-robot-braze",
+            "titanium-mainframe-manual-braze",
+            "titanium-mainframe-assembly-link",
+            "titanium-mainframe-akea"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-front-frame",
+          "operationIds": [
+            "titanium-front-frame-final-rework"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-rear-frame",
+          "operationIds": [
+            "titanium-rear-frame-final-rework"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-hbs",
+          "operationIds": [
+            "titanium-hbs-final-rework"
+          ]
+        },
+        {
+          "materialId": "titanium",
+          "partId": "titanium-hinge",
+          "operationIds": [
+            "titanium-hinge-final-rework",
+            "titanium-hinge-stamping",
+            "titanium-hinge-braze"
+          ]
+        }
+      ]
+    }
+  ]
 }

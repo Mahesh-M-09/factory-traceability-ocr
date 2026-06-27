@@ -1,10 +1,13 @@
 import { ChevronLeft, Users } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAppContext } from "../App";
 import { getOperationHistory, getReworkHistory, loadDemoRecords } from "../services/demoDatabaseService";
 import { getTodayKey, isSameLocalDay, loadProductionTargets } from "../services/targetService";
 
 export function ProductionDashboardPage() {
+  const { config } = useAppContext();
   const [date, setDate] = useState(getTodayKey());
   const records = loadDemoRecords();
   const targets = loadProductionTargets().filter((target) => target.date === date);
@@ -61,6 +64,21 @@ export function ProductionDashboardPage() {
     summary[row.operatorId] = (summary[row.operatorId] ?? 0) + 1;
     return summary;
   }, {});
+  const selectedAssignedOperators = selectedTile
+    ? (config.users ?? []).filter((user) =>
+        user.access.some((access) => {
+          const material = config.materials.find((item) => item.id === access.materialId);
+          const part = material?.parts.find((item) => item.id === access.partId);
+          const operation = part?.operations.find((item) => item.id === selectedTile.operation || item.name === selectedTile.operation);
+          return (
+            material?.name === selectedTile.material &&
+            part?.name === selectedTile.part &&
+            Boolean(operation) &&
+            access.operationIds.includes(operation.id)
+          );
+        })
+      )
+    : [];
 
   return (
     <main className="page dashboard-page">
@@ -83,7 +101,7 @@ export function ProductionDashboardPage() {
         <div>
           <span>Overall completion</span>
           <strong>{completionPercent}%</strong>
-          <p>{completedCount}/{targetCount || "-"} station completions · {Math.max(targetCount - completedCount, 0)} pending</p>
+          <p>Daily station performance against uploaded targets. {Math.max(targetCount - completedCount, 0)} checks still open.</p>
         </div>
         <div className="production-progress-track">
           <div className="production-progress-fill" style={{ width: `${completionPercent}%` }}>
@@ -118,9 +136,17 @@ export function ProductionDashboardPage() {
                       key={`${row.material}-${row.part}-${operation}`}
                       onClick={() => setSelectedTile({ material: row.material, part: row.part, operation })}
                     >
-                      <span>{operation}</span>
-                      <strong>{done}/{target || "-"}</strong>
-                      <small>{percent}% complete</small>
+                      <span
+                        className="station-dial"
+                        style={{ "--progress": `${percent * 3.6}deg` } as CSSProperties & Record<"--progress", string>}
+                      >
+                        <strong>{done}</strong>
+                        <small>/{target || "-"}</small>
+                      </span>
+                      <span className="station-tile-copy">
+                        <span>{operation}</span>
+                        <small>{percent}% complete</small>
+                      </span>
                     </button>
                   );
                 })}
@@ -134,26 +160,26 @@ export function ProductionDashboardPage() {
           <button className="table-action-button" onClick={() => setSelectedTile(null)}>Close</button>
           <h2>{selectedTile.part} · {selectedTile.operation}</h2>
           <p>{selectedRows.length}/{selectedTarget || "-"} completed on {date}</p>
-          <div className="operator-chip-list">
-            {Object.entries(selectedOperators).map(([operator, count]) => (
-              <span className="operator-chip" key={operator}><Users size={16} /> {operator}: {count}</span>
+          <div className="operator-summary-grid">
+            {selectedAssignedOperators.map((operator) => (
+              <div className="operator-summary-card" key={operator.id}>
+                <span><Users size={16} /> {operator.id}</span>
+                <strong>{selectedOperators[operator.id] ?? 0}</strong>
+                <small>{operator.name} · {selectedOperators[operator.id] ? "active today" : "no submissions"}</small>
+              </div>
             ))}
-            {Object.keys(selectedOperators).length === 0 && <span className="muted-text">No operator submissions yet.</span>}
-          </div>
-          <table className="records-table compact-records-table">
-            <thead><tr><th>Serial</th><th>Operator</th><th>Time</th><th>Cycle</th><th>Notes</th></tr></thead>
-            <tbody>
-              {selectedRows.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.serialNumber}</td>
-                  <td>{row.operatorId}</td>
-                  <td>{new Date(row.timestamp).toLocaleTimeString()}</td>
-                  <td>{row.cycleTimeSeconds || "-"}s</td>
-                  <td>{row.notes || "-"}</td>
-                </tr>
+            {selectedAssignedOperators.length === 0 &&
+              Object.entries(selectedOperators).map(([operator, count]) => (
+                <div className="operator-summary-card" key={operator}>
+                  <span><Users size={16} /> {operator}</span>
+                  <strong>{count}</strong>
+                  <small>Submitted today</small>
+                </div>
               ))}
-            </tbody>
-          </table>
+            {selectedAssignedOperators.length === 0 && Object.keys(selectedOperators).length === 0 && (
+              <span className="muted-text">No assigned operator submissions yet.</span>
+            )}
+          </div>
         </section>
       )}
     </main>
