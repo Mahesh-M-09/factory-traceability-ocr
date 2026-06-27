@@ -70,10 +70,12 @@ export function ProductionDashboardPage() {
           const material = config.materials.find((item) => item.id === access.materialId);
           const part = material?.parts.find((item) => item.id === access.partId);
           const operation = part?.operations.find((item) => item.id === selectedTile.operation || item.name === selectedTile.operation);
+          if (!operation) {
+            return false;
+          }
           return (
             material?.name === selectedTile.material &&
             part?.name === selectedTile.part &&
-            Boolean(operation) &&
             access.operationIds.includes(operation.id)
           );
         })
